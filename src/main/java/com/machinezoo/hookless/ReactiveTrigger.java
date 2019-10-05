@@ -1,3 +1,4 @@
+// Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless;
 
 import java.io.*;
