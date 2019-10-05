@@ -13,6 +13,8 @@ There are quite a few reactive libraries for Java these days, so let's say right
 * In order to protect programs from hot reactive variables, invalidated reactive values are refreshed **asynchronously** and concurrently on a thread pool instead of being refreshed immediately after reactive variable change (like in [Assisticant](https://assisticant.net/) or [Meteor](https://www.meteor.com/)).
 * Hookless has efficient high-resolution reactive time implemented via semi-explicit **time algebra** (like in [Assisticant](https://assisticant.net/). Other reactive libraries usually just provide either fully explicit timers or a low-resolution global tick.
 
+Resources:
+
 * Documentation: [Website](https://hookless.machinezoo.com/)
 * Sources: [GitHub](https://github.com/robertvazan/hookless), [Bitbucket](https://bitbucket.org/robertvazan/hookless)
 * Issues: [GitHub](https://github.com/robertvazan/hookless/issues), [Bitbucket](https://bitbucket.org/robertvazan/hookless/issues)
