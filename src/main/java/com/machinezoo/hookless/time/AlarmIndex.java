@@ -1,3 +1,4 @@
+// Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless.time;
 
 import static java.util.stream.Collectors.*;
