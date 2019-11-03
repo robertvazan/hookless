@@ -17,8 +17,7 @@ public class ReactiveCache<T> {
 		.target();
 	private ReactivePins pins;
 	private ReactiveTrigger trigger;
-	private T last;
-	private boolean valid;
+	private ReactiveValue<T> last;
 	public ReactiveCache(Supplier<T> factory) {
 		Objects.requireNonNull(factory);
 		this.factory = factory;
@@ -26,26 +25,26 @@ public class ReactiveCache<T> {
 	}
 	public T get() {
 		version.get();
-		T result;
-		boolean block;
+		ReactiveValue<T> result;
 		ReactiveScope scope = null;
 		synchronized (this) {
-			if (!valid) {
+			if (last == null) {
 				scope = OwnerTrace.of(new ReactiveScope())
 					.parent(this)
 					.target();
 				if (pins != null)
 					scope.pins(pins);
 				try (ReactiveScope.Computation computation = scope.enter()) {
-					last = timer.record(factory);
-				} catch (Throwable t) {
-					version.set(new Object());
-					exceptionCount.increment();
-					throw t;
-				} finally {
-					pins = scope.blocked() ? scope.pins() : null;
+					last = ReactiveValue.capture(() -> {
+						try {
+							return timer.record(factory);
+						} catch (Throwable ex) {
+							exceptionCount.increment();
+							throw ex;
+						}
+					});
 				}
-				valid = true;
+				pins = scope.blocked() ? scope.pins() : null;
 				trigger = OwnerTrace
 					.of(new ReactiveTrigger()
 						.callback(this::invalidate))
@@ -53,20 +52,16 @@ public class ReactiveCache<T> {
 					.target();
 			}
 			result = last;
-			block = this.pins != null;
 		}
-		if (block)
-			CurrentReactiveScope.block();
 		if (scope != null)
 			trigger.arm(scope.versions());
-		return result;
+		return result.get();
 	}
 	private void invalidate() {
 		PostLockQueue postlock = new PostLockQueue(this);
 		postlock.run(() -> {
 			if (trigger != null) {
 				last = null;
-				valid = false;
 				trigger.close();
 				trigger = null;
 				postlock.post(() -> version.set(new Object()));

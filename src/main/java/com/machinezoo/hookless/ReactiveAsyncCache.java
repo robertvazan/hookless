@@ -106,7 +106,6 @@ public class ReactiveAsyncCache<T> {
 				.callback(this::invalidate))
 			.parent(this)
 			.target();
-		//CacheVars<T> update = new CacheVars<T>().withLatest(updated);
 		PostLockQueue postlock = new PostLockQueue(this);
 		postlock.run(() -> {
 			this.trigger = trigger;
