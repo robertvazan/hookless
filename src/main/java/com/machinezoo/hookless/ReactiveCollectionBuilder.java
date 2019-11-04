@@ -5,7 +5,7 @@ import java.util.*;
 
 /*
  * We don't want to expose an ocean of new classes wrapping every kind of collection.
- * We instead define single builder class with one wrapping methods for every type of collection.
+ * We instead define single builder class with one wrapping method for every type of collection.
  * This makes for a simple, concise API.
  * 
  * There is no perfect way to define reactive collections. We try to offer good defaults
