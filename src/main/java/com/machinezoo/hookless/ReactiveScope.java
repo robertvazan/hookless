@@ -1,13 +1,11 @@
 // Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless;
 
+import static java.util.stream.Collectors.*;
 import java.io.*;
 import java.util.*;
 import java.util.function.*;
-import gnu.trove.impl.*;
-import gnu.trove.map.*;
-import gnu.trove.map.hash.*;
-import gnu.trove.procedure.*;
+import it.unimi.dsi.fastutil.objects.*;
 
 /*
  * This is the thread-local thing that is essential for hookless way of doing reactivity.
@@ -107,13 +105,8 @@ public class ReactiveScope {
 	}
 	/*
 	 * We can only depend on one version of every variable, which means we need a map from variables to their versions.
-	 * 
-	 * GNU Trove has this annoying property of allowing anything to change through configuration.
-	 * Even missing entry value can be reconfigured to be something other than zero.
-	 * That's why we have to use the full constructor and specify zero as the missing entry value.
-	 * We need this during lookups to differentiate present and missing entries.
 	 */
-	private TObjectLongMap<ReactiveVariable<?>> dependencies = new TObjectLongHashMap<>(Constants.DEFAULT_CAPACITY, Constants.DEFAULT_LOAD_FACTOR, 0L);
+	private Object2LongMap<ReactiveVariable<?>> dependencies = new Object2LongOpenHashMap<>();
 	/*
 	 * However, we cannot expose a data structure like this through the API, because it can easily change.
 	 * We will instead let callers iterate over a sequence of version objects.
@@ -135,17 +128,11 @@ public class ReactiveScope {
 			return Collections.singletonList(invalidated.new Version(invalidated.version() - 1));
 		/*
 		 * This is quite inefficient, but the API allows for very high efficiency.
-		 * We could have a custom iterator (forwarding to GNU Trove iterator)
-		 * and even have it return the same object repeatedly with different field values.
+		 * We could have a custom iterator, perhaps even one recycling objects.
 		 */
-		List<ReactiveVariable<?>.Version> result = new ArrayList<>();
-		dependencies.forEachEntry(new TObjectLongProcedure<ReactiveVariable<?>>() {
-			@Override public boolean execute(ReactiveVariable<?> variable, long version) {
-				result.add(variable.new Version(version));
-				return true;
-			}
-		});
-		return result;
+		return dependencies.object2LongEntrySet().stream()
+			.map(e -> e.getKey().new Version(e.getLongValue()))
+			.collect(toList());
 	}
 	private static ReactiveVariable<Object> invalidated = new ReactiveVariable<>();
 	static {
@@ -173,7 +160,7 @@ public class ReactiveScope {
 	 * so we are satisfied with an API that lets callers rebuild the scope with some dependencies modified or filtered out.
 	 */
 	public void watch(ReactiveVariable<?> variable, long version) {
-		long previous = dependencies.get(variable);
+		long previous = dependencies.getLong(variable);
 		if (previous == 0 || version < previous)
 			dependencies.put(variable, version);
 	}
