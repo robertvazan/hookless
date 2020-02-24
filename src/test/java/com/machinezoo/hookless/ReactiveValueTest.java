@@ -28,8 +28,8 @@ public class ReactiveValueTest {
 		v = new ReactiveValue<>(ex, true);
 		assertTrue(v.blocking());
 	}
-	@Test(expected = IllegalArgumentException.class) public void detectInconsistentValue() {
-		new ReactiveValue<>("hello", new RuntimeException(), false);
+	@Test public void detectInconsistentValue() {
+		assertThrows(IllegalArgumentException.class, () -> new ReactiveValue<>("hello", new RuntimeException(), false));
 	}
 	@Test public void supportsEquality() {
 		String s1 = "hello";
