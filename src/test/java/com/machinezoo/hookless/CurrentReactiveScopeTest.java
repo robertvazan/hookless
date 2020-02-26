@@ -1,8 +1,8 @@
 // Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless;
 
-import static org.junit.Assert.*;
-import org.junit.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
 public class CurrentReactiveScopeTest {
 	@Test public void propagateBlocking() {

@@ -1,9 +1,9 @@
 // Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.concurrent.*;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 public class ReactiveValueTest {
 	@Test public void easyConstruction() {
