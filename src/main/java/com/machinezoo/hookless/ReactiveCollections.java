@@ -2,6 +2,7 @@
 package com.machinezoo.hookless;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 /*
  * We don't want to expose an ocean of new classes wrapping every kind of collection.
@@ -57,23 +58,24 @@ public class ReactiveCollections {
 	 */
 	public static interface Option {
 	}
-	private static class Options {
+	private static class Configuration {
 		boolean compareValues;
 		boolean ignoreWriteStatus;
 		boolean ignoreWriteExceptions;
 		boolean silenceWriteStatus;
 		boolean silenceWriteExceptions;
+		boolean perItem;
 	}
 	private static interface ExecutableOption extends Option {
-		void apply(Options options);
+		void apply(Configuration config);
 	}
 	/*
 	 * Checking for full equality during writes may reduce the number of invalidations.
 	 * False by default since standard Java collections don't do any equality check during item writes.
 	 */
 	public static final Option COMPARE_VALUES = new ExecutableOption() {
-		@Override public void apply(Options options) {
-			options.compareValues = true;
+		@Override public void apply(Configuration config) {
+			config.compareValues = true;
 		}
 	};
 	/*
@@ -86,13 +88,13 @@ public class ReactiveCollections {
 	 * False by default to honor read-write semantics of standard Java collections.
 	 */
 	public static final Option IGNORE_WRITE_STATUS = new ExecutableOption() {
-		@Override public void apply(Options options) {
-			options.ignoreWriteStatus = true;
+		@Override public void apply(Configuration config) {
+			config.ignoreWriteStatus = true;
 		}
 	};
 	public static final Option IGNORE_WRITE_EXCEPTIONS = new ExecutableOption() {
-		@Override public void apply(Options options) {
-			options.ignoreWriteExceptions = true;
+		@Override public void apply(Configuration config) {
+			config.ignoreWriteExceptions = true;
 		}
 	};
 	/*
@@ -104,20 +106,31 @@ public class ReactiveCollections {
 	 * False by default to honor interface semantics of Java collections.
 	 */
 	public static final Option SILENCE_WRITE_STATUS = new ExecutableOption() {
-		@Override public void apply(Options options) {
-			options.silenceWriteStatus = true;
+		@Override public void apply(Configuration config) {
+			config.silenceWriteStatus = true;
 		}
 	};
 	public static final Option SILENCE_WRITE_EXCEPTIONS = new ExecutableOption() {
-		@Override public void apply(Options options) {
-			options.silenceWriteExceptions = true;
+		@Override public void apply(Configuration config) {
+			config.silenceWriteExceptions = true;
 		}
 	};
-	private static Options options(Option[] flags) {
-		Options options = new Options();
-		for (Option flag : flags)
-			((ExecutableOption)flag).apply(options);
-		return options;
+	/*
+	 * Collections have single reactive variable by default.
+	 * This matches document-level granularity preferred for reactive objects in hookless.
+	 * It is however often useful to have one reactive variable per item,
+	 * especially in large maps or maps with heavy values.
+	 */
+	public static final Option PER_ITEM = new ExecutableOption() {
+		@Override public void apply(Configuration config) {
+			config.perItem = true;
+		}
+	};
+	private static Configuration configuration(Option[] options) {
+		Configuration config = new Configuration();
+		for (Option option : options)
+			((ExecutableOption)option).apply(config);
+		return config;
 	}
 	/*
 	 * Base class for both collections and iterators.
@@ -125,33 +138,30 @@ public class ReactiveCollections {
 	 */
 	private static class ReactiveCollectionObject {
 		final ReactiveVariable<Object> version;
-		/*
-		 * Copying all the flags here probably isn't an ideal solution, but it will do for now.
-		 */
-		final Options options;
-		ReactiveCollectionObject(Options options) {
+		final Configuration config;
+		ReactiveCollectionObject(Configuration config) {
 			version = OwnerTrace.of(new ReactiveVariable<Object>())
 				.parent(this)
 				.target();
-			this.options = options;
+			this.config = config;
 		}
 		ReactiveCollectionObject(ReactiveCollectionObject master) {
 			version = master.version;
-			options = master.options;
+			config = master.config;
 		}
 		void observe() {
 			version.get();
 		}
 		void observeStatus() {
-			if (!options.ignoreWriteStatus)
+			if (!config.ignoreWriteStatus)
 				observe();
 		}
 		void observeException() {
-			if (!options.ignoreWriteExceptions)
+			if (!config.ignoreWriteExceptions)
 				observe();
 		}
 		void observeStatusAndException() {
-			if (!options.ignoreWriteStatus || !options.ignoreWriteExceptions)
+			if (!config.ignoreWriteStatus || !config.ignoreWriteExceptions)
 				observe();
 		}
 		void invalidate() {
@@ -162,21 +172,21 @@ public class ReactiveCollections {
 				invalidate();
 		}
 		void invalidateIfChanged(Object previous, Object next) {
-			if (!options.compareValues && previous != next || options.compareValues && !Objects.equals(previous, next))
+			if (!config.compareValues && previous != next || config.compareValues && !Objects.equals(previous, next))
 				invalidate();
 		}
 		RuntimeException silenceException(RuntimeException ex) {
-			if (options.silenceWriteExceptions)
+			if (config.silenceWriteExceptions)
 				return new SilencedCollectionException(ex);
 			return ex;
 		}
 		boolean silenceStatus(boolean changed) {
-			if (options.silenceWriteStatus)
+			if (config.silenceWriteStatus)
 				return true;
 			return changed;
 		}
 		<T> T silenceResult(T result) {
-			if (options.silenceWriteStatus)
+			if (config.silenceWriteStatus)
 				return null;
 			return result;
 		}
@@ -185,6 +195,89 @@ public class ReactiveCollections {
 		private static final long serialVersionUID = -2919538247896857962L;
 		SilencedCollectionException(RuntimeException silenced) {
 			super(silenced);
+		}
+	}
+	/*
+	 * Keyed collections (sets and maps) and their iterators and views need per-key reactivity.
+	 * We will opt to create reactive variables also when missing keys are queried,
+	 * which can lead to surprisingly high memory usage, but it is realistically implementable.
+	 */
+	private static class ReactiveItemObject extends ReactiveCollectionObject {
+		final Map<Object, ReactiveVariable<Object>> kversions;
+		ReactiveItemObject(Configuration config) {
+			super(config);
+			/*
+			 * Synchronize on kversions, so that iterators and views share lock with the main collection.
+			 */
+			kversions = new ConcurrentHashMap<>();
+		}
+		ReactiveItemObject(ReactiveItemObject master) {
+			super(master);
+			kversions = master.kversions;
+		}
+		void observe(Object item) {
+			ReactiveVariable<Object> kversion = kversions.computeIfAbsent(item, k -> OwnerTrace.of(new ReactiveVariable<Object>())
+				.parent(this)
+				.tag("item", item)
+				.target());
+			kversion.get();
+		}
+		void observe(Collection<?> items) {
+			for (Object item : items)
+				observe(item);
+		}
+		void observeStatus(Object item) {
+			if (!config.ignoreWriteStatus)
+				observe(item);
+		}
+		void observeStatus(Collection<?> items) {
+			if (!config.ignoreWriteStatus)
+				observe(items);
+		}
+		void observeStatusAndException(Object item) {
+			if (!config.ignoreWriteStatus || !config.ignoreWriteExceptions)
+				observe(item);
+		}
+		void observeStatusAndException(Collection<?> items) {
+			if (!config.ignoreWriteStatus || !config.ignoreWriteExceptions)
+				observe(items);
+		}
+		void invalidateItem(Object item) {
+			ReactiveVariable<Object> kversion = kversions.remove(item);
+			if (kversion != null)
+				kversion.set(new Object());
+		}
+		void invalidate(Object item) {
+			invalidateItem(item);
+			invalidate();
+		}
+		void invalidate(Collection<?> items) {
+			if (!items.isEmpty()) {
+				for (Object item : items)
+					invalidateItem(item);
+				invalidate();
+			}
+		}
+		void invalidateAll() {
+			for (Object item : new ArrayList<>(kversions.keySet()))
+				invalidateItem(item);
+			invalidate();
+		}
+		void invalidateIf(Object item, boolean changed) {
+			if (changed)
+				invalidate(item);
+		}
+		void invalidateIf(Collection<?> items, boolean changed) {
+			if (changed)
+				invalidate(items);
+		}
+		void invalidateAllIf(boolean changed) {
+			if (changed)
+				invalidateAll();
+		}
+		void invalidateIfChanged(Object item, Object previous, Object next) {
+			if (!config.compareValues && previous != next || config.compareValues && !Objects.equals(previous, next))
+				invalidate(item);
 		}
 	}
 	private static class ReactiveIterator<T> extends ReactiveCollectionObject implements Iterator<T> {
@@ -204,12 +297,12 @@ public class ReactiveCollections {
 	}
 	public static <T> Collection<T> collection(Collection<T> collection, Option... options) {
 		Objects.requireNonNull(collection);
-		return new ReactiveCollection<>(collection, options(options));
+		return new ReactiveCollection<>(collection, configuration(options));
 	}
 	private static class ReactiveCollection<T> extends ReactiveCollectionObject implements Collection<T> {
 		final Collection<T> inner;
-		ReactiveCollection(Collection<T> inner, Options options) {
-			super(options);
+		ReactiveCollection(Collection<T> inner, Configuration config) {
+			super(config);
 			OwnerTrace.of(this).alias("collection");
 			this.inner = inner;
 		}
@@ -305,6 +398,110 @@ public class ReactiveCollections {
 			return inner.toArray(array);
 		}
 		@Override public String toString() {
+			observe();
+			return OwnerTrace.of(this) + ": " + inner;
+		}
+	}
+	private static class ReactiveItemCollection<T> extends ReactiveItemObject implements Collection<T> {
+		final Collection<T> inner;
+		ReactiveItemCollection(Collection<T> inner, Configuration config) {
+			super(config);
+			OwnerTrace.of(this).alias("collection");
+			this.inner = inner;
+		}
+		ReactiveItemCollection(Collection<T> inner, ReactiveItemObject master) {
+			super(master);
+			OwnerTrace.of(this).alias("collection");
+			this.inner = inner;
+		}
+		@Override public boolean add(T item) {
+			Objects.requireNonNull(item);
+			observeStatusAndException(item);
+			boolean changed;
+			try {
+				changed = inner.add(item);
+			} catch (IllegalStateException ex) {
+				throw silenceException(ex);
+			}
+			invalidateIf(item, changed);
+			return silenceStatus(changed);
+		}
+		@Override public boolean addAll(Collection<? extends T> collection) {
+			for (T item : collection)
+				Objects.requireNonNull(item);
+			observeStatusAndException(collection);
+			boolean changed;
+			try {
+				changed = inner.addAll(collection);
+			} catch (IllegalStateException ex) {
+				/*
+				 * We don't know whether any elements were added, so invalidate just in case.
+				 */
+				invalidate(collection);
+				throw silenceException(ex);
+			}
+			invalidateIf(collection, changed);
+			return silenceStatus(changed);
+		}
+		@Override public void clear() {
+			inner.clear();
+			invalidateAll();
+		}
+		@Override public boolean contains(Object item) {
+			observe(item);
+			return inner.contains(item);
+		}
+		@Override public boolean containsAll(Collection<?> collection) {
+			observe(collection);
+			return inner.containsAll(collection);
+		}
+		@Override public boolean equals(Object obj) {
+			observe();
+			return inner.equals(obj);
+		}
+		@Override public int hashCode() {
+			observe();
+			return inner.hashCode();
+		}
+		@Override public boolean isEmpty() {
+			observe();
+			return inner.isEmpty();
+		}
+		@Override public Iterator<T> iterator() {
+			return new ReactiveIterator<>(this, inner.iterator());
+		}
+		@Override public boolean remove(Object item) {
+			observeStatus(item);
+			boolean changed = inner.remove(item);
+			invalidateIf(item, changed);
+			return silenceStatus(changed);
+		}
+		@Override public boolean removeAll(Collection<?> collection) {
+			observeStatus(collection);
+			boolean changed = inner.removeAll(collection);
+			invalidateIf(collection, changed);
+			return silenceStatus(changed);
+		}
+		@Override public boolean retainAll(Collection<?> collection) {
+			observeStatus();
+			boolean changed = inner.retainAll(collection);
+			invalidateAllIf(changed);
+			return silenceStatus(changed);
+		}
+		@Override public int size() {
+			observe();
+			return inner.size();
+		}
+		@Override public Object[] toArray() {
+			observe();
+			return inner.toArray();
+		}
+		@Override public <U extends Object> U[] toArray(U[] array) {
+			observe();
+			return inner.toArray(array);
+		}
+		@Override public String toString() {
+			observe();
 			return OwnerTrace.of(this) + ": " + inner;
 		}
 	}
@@ -357,12 +554,12 @@ public class ReactiveCollections {
 	}
 	public static <T> List<T> list(List<T> list, Option... options) {
 		Objects.requireNonNull(list);
-		return new ReactiveList<>(list, options(options));
+		return new ReactiveList<>(list, configuration(options));
 	}
 	private static class ReactiveList<T> extends ReactiveCollection<T> implements List<T> {
 		final List<T> inner;
-		ReactiveList(List<T> inner, Options options) {
-			super(inner, options);
+		ReactiveList(List<T> inner, Configuration config) {
+			super(inner, config);
 			OwnerTrace.of(this).alias("list");
 			this.inner = inner;
 		}
@@ -467,12 +664,16 @@ public class ReactiveCollections {
 	}
 	public static <T> Set<T> set(Set<T> set, Option... options) {
 		Objects.requireNonNull(set);
-		return new ReactiveSet<>(set, options(options));
+		Configuration config = configuration(options);
+		if (config.perItem)
+			return new ReactiveItemSet<>(set, config);
+		else
+			return new ReactiveSet<>(set, config);
 	}
 	private static class ReactiveSet<T> extends ReactiveCollection<T> implements Set<T> {
 		final Set<T> inner;
-		ReactiveSet(Set<T> inner, Options options) {
-			super(inner, options);
+		ReactiveSet(Set<T> inner, Configuration config) {
+			super(inner, config);
 			OwnerTrace.of(this).alias("set");
 			this.inner = inner;
 		}
@@ -497,14 +698,46 @@ public class ReactiveCollections {
 			return silenceStatus(changed);
 		}
 	}
+	private static class ReactiveItemSet<T> extends ReactiveItemCollection<T> implements Set<T> {
+		final Set<T> inner;
+		ReactiveItemSet(Set<T> inner, Configuration config) {
+			super(inner, config);
+			OwnerTrace.of(this).alias("set");
+			this.inner = inner;
+		}
+		ReactiveItemSet(Set<T> inner, ReactiveItemObject master) {
+			super(inner, master);
+			OwnerTrace.of(this).alias("set");
+			this.inner = inner;
+		}
+		@Override public boolean add(T item) {
+			Objects.requireNonNull(item);
+			observeStatus(item);
+			boolean changed = inner.add(item);
+			invalidateIf(item, changed);
+			return silenceStatus(changed);
+		}
+		@Override public boolean addAll(Collection<? extends T> collection) {
+			for (T item : collection)
+				Objects.requireNonNull(item);
+			observeStatus(collection);
+			boolean changed = inner.addAll(collection);
+			invalidateIf(collection, changed);
+			return silenceStatus(changed);
+		}
+	}
 	public static <K, V> Map<K, V> map(Map<K, V> map, Option... options) {
 		Objects.requireNonNull(map);
-		return new ReactiveMap<>(map, options(options));
+		Configuration config = configuration(options);
+		if (config.perItem)
+			return new ReactiveItemMap<>(map, config);
+		else
+			return new ReactiveMap<>(map, config);
 	}
 	private static class ReactiveMap<K, V> extends ReactiveCollectionObject implements Map<K, V> {
 		final Map<K, V> inner;
-		ReactiveMap(Map<K, V> inner, Options options) {
-			super(options);
+		ReactiveMap(Map<K, V> inner, Configuration config) {
+			super(config);
 			OwnerTrace.of(this).alias("map");
 			this.inner = inner;
 		}
@@ -574,9 +807,86 @@ public class ReactiveCollections {
 			return OwnerTrace.of(this) + ": " + inner;
 		}
 	}
+	private static class ReactiveItemMap<K, V> extends ReactiveItemObject implements Map<K, V> {
+		final Map<K, V> inner;
+		ReactiveItemMap(Map<K, V> inner, Configuration config) {
+			super(config);
+			OwnerTrace.of(this).alias("map");
+			this.inner = inner;
+		}
+		@Override public void clear() {
+			inner.clear();
+			invalidateAll();
+		}
+		@Override public boolean containsKey(Object key) {
+			observe(key);
+			return inner.containsKey(key);
+		}
+		@Override public boolean containsValue(Object value) {
+			observe();
+			return inner.containsValue(value);
+		}
+		@Override public Set<Entry<K, V>> entrySet() {
+			/*
+			 * Don't use ReactiveItemSet here, because entry objects != key objects. Per key reactivity won't work.
+			 */
+			return new ReactiveSet<>(inner.entrySet(), this);
+		}
+		@Override public boolean equals(Object obj) {
+			observe();
+			return inner.equals(obj);
+		}
+		@Override public V get(Object key) {
+			observe(key);
+			return inner.get(key);
+		}
+		@Override public int hashCode() {
+			observe();
+			return inner.hashCode();
+		}
+		@Override public boolean isEmpty() {
+			observe();
+			return inner.isEmpty();
+		}
+		@Override public Set<K> keySet() {
+			return new ReactiveItemSet<>(inner.keySet(), this);
+		}
+		@Override public V put(K key, V value) {
+			Objects.requireNonNull(value);
+			observeStatus(key);
+			V previous = inner.put(key, value);
+			invalidateIfChanged(key, previous, value);
+			return silenceResult(previous);
+		}
+		@Override public void putAll(Map<? extends K, ? extends V> m) {
+			if (!m.isEmpty()) {
+				for (V value : m.values())
+					Objects.requireNonNull(value);
+				inner.putAll(m);
+				invalidate(m.keySet());
+			}
+		}
+		@Override public V remove(Object key) {
+			observeStatus(key);
+			V value = inner.remove(key);
+			invalidateIf(key, value != null);
+			return silenceResult(value);
+		}
+		@Override public int size() {
+			observe();
+			return inner.size();
+		}
+		@Override public Collection<V> values() {
+			return new ReactiveCollection<>(inner.values(), this);
+		}
+		@Override public String toString() {
+			observe();
+			return OwnerTrace.of(this) + ": " + inner;
+		}
+	}
 	public static <T> Queue<T> queue(Queue<T> queue, Option... options) {
 		Objects.requireNonNull(queue);
-		return new ReactiveQueue<>(queue, options(options));
+		return new ReactiveQueue<>(queue, configuration(options));
 	}
 	/*
 	 * Queue can be configured ignore/silence write status and exceptions,
@@ -585,8 +895,8 @@ public class ReactiveCollections {
 	 */
 	private static class ReactiveQueue<T> extends ReactiveCollection<T> implements Queue<T> {
 		final Queue<T> inner;
-		ReactiveQueue(Queue<T> inner, Options options) {
-			super(inner, options);
+		ReactiveQueue(Queue<T> inner, Configuration config) {
+			super(inner, config);
 			OwnerTrace.of(this).alias("queue");
 			this.inner = inner;
 		}
