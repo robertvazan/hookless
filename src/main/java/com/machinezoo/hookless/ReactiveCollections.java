@@ -5,7 +5,7 @@ import java.util.*;
 
 /*
  * We don't want to expose an ocean of new classes wrapping every kind of collection.
- * We instead define single builder class with one wrapping method for every type of collection.
+ * We instead define wrapping methods, one for every type of collection, and let them take various options.
  * This makes for a simple, concise API.
  * 
  * There is no perfect way to define reactive collections. We try to offer good defaults
@@ -48,16 +48,34 @@ import java.util.*;
  * Given that this feature is rarely needed, it is better to not provide it for now
  * and instead expect callers to find another way, for example using immutable objects.
  */
-public class ReactiveCollectionBuilder {
+public class ReactiveCollections {
+	/*
+	 * There are many ways to supply options to wrapping methods, but NIO-style ellipsis option parameters are neat.
+	 * We could use an option object, but that would make the API more verbose when none or just one option is used.
+	 * We could also have a builder where options are specified, but this is again verbose for typical cases.
+	 * Having ellipsis option parameters has the advantage that different wrapper methods can have different defaults.
+	 */
+	public static interface Option {
+	}
+	private static class Options {
+		boolean compareValues;
+		boolean ignoreWriteStatus;
+		boolean ignoreWriteExceptions;
+		boolean silenceWriteStatus;
+		boolean silenceWriteExceptions;
+	}
+	private static interface ExecutableOption extends Option {
+		void apply(Options options);
+	}
 	/*
 	 * Checking for full equality during writes may reduce the number of invalidations.
 	 * False by default since standard Java collections don't do any equality check during item writes.
 	 */
-	private boolean compareValues;
-	public ReactiveCollectionBuilder compareValues(boolean compare) {
-		this.compareValues = compare;
-		return this;
-	}
+	public static final Option COMPARE_VALUES = new ExecutableOption() {
+		@Override public void apply(Options options) {
+			options.compareValues = true;
+		}
+	};
 	/*
 	 * Writes may signal collection state via return value or specific exceptions.
 	 * By default we observe the collection as a dependency to account for it.
@@ -67,16 +85,16 @@ public class ReactiveCollectionBuilder {
 	 * This has no effect on methods that are inherently read-write.
 	 * False by default to honor read-write semantics of standard Java collections.
 	 */
-	private boolean ignoreWriteStatus;
-	public ReactiveCollectionBuilder ignoreWriteStatus(boolean ignore) {
-		this.ignoreWriteStatus = ignore;
-		return this;
-	}
-	private boolean ignoreWriteExceptions;
-	public ReactiveCollectionBuilder ignoreWriteExceptions(boolean ignore) {
-		this.ignoreWriteExceptions = ignore;
-		return this;
-	}
+	public static final Option IGNORE_WRITE_STATUS = new ExecutableOption() {
+		@Override public void apply(Options options) {
+			options.ignoreWriteStatus = true;
+		}
+	};
+	public static final Option IGNORE_WRITE_EXCEPTIONS = new ExecutableOption() {
+		@Override public void apply(Options options) {
+			options.ignoreWriteExceptions = true;
+		}
+	};
 	/*
 	 * If write status or exceptions are not observed as dependencies,
 	 * but they are still used by callers, it can result in surprisingly non-reactive code.
@@ -85,15 +103,21 @@ public class ReactiveCollectionBuilder {
 	 * This has no effect on methods that are inherently read-write.
 	 * False by default to honor interface semantics of Java collections.
 	 */
-	private boolean silenceWriteStatus;
-	public ReactiveCollectionBuilder silenceWriteStatus(boolean silence) {
-		this.silenceWriteStatus = silence;
-		return this;
-	}
-	private boolean silenceWriteExceptions;
-	public ReactiveCollectionBuilder silenceWriteExceptions(boolean silence) {
-		this.silenceWriteExceptions = silence;
-		return this;
+	public static final Option SILENCE_WRITE_STATUS = new ExecutableOption() {
+		@Override public void apply(Options options) {
+			options.silenceWriteStatus = true;
+		}
+	};
+	public static final Option SILENCE_WRITE_EXCEPTIONS = new ExecutableOption() {
+		@Override public void apply(Options options) {
+			options.silenceWriteExceptions = true;
+		}
+	};
+	private static Options options(Option[] flags) {
+		Options options = new Options();
+		for (Option flag : flags)
+			((ExecutableOption)flag).apply(options);
+		return options;
 	}
 	/*
 	 * Base class for both collections and iterators.
@@ -104,42 +128,30 @@ public class ReactiveCollectionBuilder {
 		/*
 		 * Copying all the flags here probably isn't an ideal solution, but it will do for now.
 		 */
-		final boolean deduplicateWrites;
-		final boolean ignoreWriteStatus;
-		final boolean ignoreWriteExceptions;
-		final boolean silenceWriteStatus;
-		final boolean silenceWriteExceptions;
-		ReactiveCollectionObject(ReactiveCollectionBuilder builder) {
+		final Options options;
+		ReactiveCollectionObject(Options options) {
 			version = OwnerTrace.of(new ReactiveVariable<Object>())
 				.parent(this)
 				.target();
-			deduplicateWrites = builder.compareValues;
-			ignoreWriteStatus = builder.ignoreWriteStatus || builder.silenceWriteStatus;
-			ignoreWriteExceptions = builder.ignoreWriteExceptions || builder.silenceWriteExceptions;
-			silenceWriteStatus = builder.silenceWriteStatus;
-			silenceWriteExceptions = builder.silenceWriteExceptions;
+			this.options = options;
 		}
 		ReactiveCollectionObject(ReactiveCollectionObject master) {
 			version = master.version;
-			deduplicateWrites = master.deduplicateWrites;
-			ignoreWriteStatus = master.ignoreWriteStatus;
-			ignoreWriteExceptions = master.ignoreWriteExceptions;
-			silenceWriteStatus = master.silenceWriteStatus;
-			silenceWriteExceptions = master.silenceWriteExceptions;
+			options = master.options;
 		}
 		void observe() {
 			version.get();
 		}
 		void observeStatus() {
-			if (!ignoreWriteStatus)
+			if (!options.ignoreWriteStatus)
 				observe();
 		}
 		void observeException() {
-			if (!ignoreWriteExceptions)
+			if (!options.ignoreWriteExceptions)
 				observe();
 		}
 		void observeStatusAndException() {
-			if (!ignoreWriteStatus || !ignoreWriteExceptions)
+			if (!options.ignoreWriteStatus || !options.ignoreWriteExceptions)
 				observe();
 		}
 		void invalidate() {
@@ -150,21 +162,21 @@ public class ReactiveCollectionBuilder {
 				invalidate();
 		}
 		void invalidateIfChanged(Object previous, Object next) {
-			if (!deduplicateWrites && previous != next || deduplicateWrites && !Objects.equals(previous, next))
+			if (!options.compareValues && previous != next || options.compareValues && !Objects.equals(previous, next))
 				invalidate();
 		}
 		RuntimeException silenceException(RuntimeException ex) {
-			if (silenceWriteExceptions)
+			if (options.silenceWriteExceptions)
 				return new SilencedCollectionException(ex);
 			return ex;
 		}
 		boolean silenceStatus(boolean changed) {
-			if (silenceWriteStatus)
+			if (options.silenceWriteStatus)
 				return true;
 			return changed;
 		}
 		<T> T silenceResult(T result) {
-			if (silenceWriteStatus)
+			if (options.silenceWriteStatus)
 				return null;
 			return result;
 		}
@@ -190,18 +202,18 @@ public class ReactiveCollectionBuilder {
 			return inner.next();
 		}
 	}
-	public <T> Collection<T> wrapCollection(Collection<T> collection) {
+	public static <T> Collection<T> collection(Collection<T> collection, Option... options) {
 		Objects.requireNonNull(collection);
-		return new ReactiveCollection<>(this, collection);
+		return new ReactiveCollection<>(collection, options(options));
 	}
 	private static class ReactiveCollection<T> extends ReactiveCollectionObject implements Collection<T> {
 		final Collection<T> inner;
-		ReactiveCollection(ReactiveCollectionBuilder builder, Collection<T> inner) {
-			super(builder);
+		ReactiveCollection(Collection<T> inner, Options options) {
+			super(options);
 			OwnerTrace.of(this).alias("collection");
 			this.inner = inner;
 		}
-		ReactiveCollection(ReactiveCollectionObject master, Collection<T> inner) {
+		ReactiveCollection(Collection<T> inner, ReactiveCollectionObject master) {
 			super(master);
 			OwnerTrace.of(this).alias("collection");
 			this.inner = inner;
@@ -343,19 +355,19 @@ public class ReactiveCollectionBuilder {
 			invalidate();
 		}
 	}
-	public <T> List<T> wrapList(List<T> list) {
+	public static <T> List<T> list(List<T> list, Option... options) {
 		Objects.requireNonNull(list);
-		return new ReactiveList<>(this, list);
+		return new ReactiveList<>(list, options(options));
 	}
 	private static class ReactiveList<T> extends ReactiveCollection<T> implements List<T> {
 		final List<T> inner;
-		ReactiveList(ReactiveCollectionBuilder builder, List<T> inner) {
-			super(builder, inner);
+		ReactiveList(List<T> inner, Options options) {
+			super(inner, options);
 			OwnerTrace.of(this).alias("list");
 			this.inner = inner;
 		}
-		ReactiveList(ReactiveCollectionObject master, List<T> inner) {
-			super(master, inner);
+		ReactiveList(List<T> inner, ReactiveCollectionObject master) {
+			super(inner, master);
 			OwnerTrace.of(this).alias("list");
 			this.inner = inner;
 		}
@@ -447,25 +459,25 @@ public class ReactiveCollectionBuilder {
 		@Override public List<T> subList(int fromIndex, int toIndex) {
 			observeException();
 			try {
-				return new ReactiveList<>(this, inner.subList(fromIndex, toIndex));
+				return new ReactiveList<>(inner.subList(fromIndex, toIndex), this);
 			} catch (IndexOutOfBoundsException ex) {
 				throw silenceException(ex);
 			}
 		}
 	}
-	public <T> Set<T> wrapSet(Set<T> set) {
+	public static <T> Set<T> set(Set<T> set, Option... options) {
 		Objects.requireNonNull(set);
-		return new ReactiveSet<>(this, set);
+		return new ReactiveSet<>(set, options(options));
 	}
 	private static class ReactiveSet<T> extends ReactiveCollection<T> implements Set<T> {
 		final Set<T> inner;
-		ReactiveSet(ReactiveCollectionBuilder builder, Set<T> inner) {
-			super(builder, inner);
+		ReactiveSet(Set<T> inner, Options options) {
+			super(inner, options);
 			OwnerTrace.of(this).alias("set");
 			this.inner = inner;
 		}
-		ReactiveSet(ReactiveCollectionObject master, Set<T> inner) {
-			super(master, inner);
+		ReactiveSet(Set<T> inner, ReactiveCollectionObject master) {
+			super(inner, master);
 			OwnerTrace.of(this).alias("set");
 			this.inner = inner;
 		}
@@ -485,14 +497,14 @@ public class ReactiveCollectionBuilder {
 			return silenceStatus(changed);
 		}
 	}
-	public <K, V> Map<K, V> wrapMap(Map<K, V> map) {
+	public static <K, V> Map<K, V> map(Map<K, V> map, Option... options) {
 		Objects.requireNonNull(map);
-		return new ReactiveMap<>(this, map);
+		return new ReactiveMap<>(map, options(options));
 	}
 	private static class ReactiveMap<K, V> extends ReactiveCollectionObject implements Map<K, V> {
 		final Map<K, V> inner;
-		ReactiveMap(ReactiveCollectionBuilder builder, Map<K, V> inner) {
-			super(builder);
+		ReactiveMap(Map<K, V> inner, Options options) {
+			super(options);
 			OwnerTrace.of(this).alias("map");
 			this.inner = inner;
 		}
@@ -509,7 +521,7 @@ public class ReactiveCollectionBuilder {
 			return inner.containsValue(value);
 		}
 		@Override public Set<Entry<K, V>> entrySet() {
-			return new ReactiveSet<>(this, inner.entrySet());
+			return new ReactiveSet<>(inner.entrySet(), this);
 		}
 		@Override public boolean equals(Object obj) {
 			observe();
@@ -528,7 +540,7 @@ public class ReactiveCollectionBuilder {
 			return inner.isEmpty();
 		}
 		@Override public Set<K> keySet() {
-			return new ReactiveSet<>(this, inner.keySet());
+			return new ReactiveSet<>(inner.keySet(), this);
 		}
 		@Override public V put(K key, V value) {
 			Objects.requireNonNull(value);
@@ -556,15 +568,15 @@ public class ReactiveCollectionBuilder {
 			return inner.size();
 		}
 		@Override public Collection<V> values() {
-			return new ReactiveCollection<>(this, inner.values());
+			return new ReactiveCollection<>(inner.values(), this);
 		}
 		@Override public String toString() {
 			return OwnerTrace.of(this) + ": " + inner;
 		}
 	}
-	public <T> Queue<T> wrapQueue(Queue<T> queue) {
+	public static <T> Queue<T> queue(Queue<T> queue, Option... options) {
 		Objects.requireNonNull(queue);
-		return new ReactiveQueue<>(this, queue);
+		return new ReactiveQueue<>(queue, options(options));
 	}
 	/*
 	 * Queue can be configured ignore/silence write status and exceptions,
@@ -573,8 +585,8 @@ public class ReactiveCollectionBuilder {
 	 */
 	private static class ReactiveQueue<T> extends ReactiveCollection<T> implements Queue<T> {
 		final Queue<T> inner;
-		ReactiveQueue(ReactiveCollectionBuilder builder, Queue<T> inner) {
-			super(builder, inner);
+		ReactiveQueue(Queue<T> inner, Options options) {
+			super(inner, options);
 			OwnerTrace.of(this).alias("queue");
 			this.inner = inner;
 		}
