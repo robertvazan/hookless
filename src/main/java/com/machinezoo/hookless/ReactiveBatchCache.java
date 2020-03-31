@@ -13,9 +13,8 @@ public class ReactiveBatchCache<T> {
 		.parent(this)
 		.target();
 	private boolean started;
-	private final ReactiveLoop<Void> loop = OwnerTrace
-		.of(new ReactiveLoop<Void>()
-			.body(this::refresh))
+	private final ReactiveThread thread = OwnerTrace
+		.of(new ReactiveThread(this::refresh))
 		.parent(this)
 		.target();
 	public ReactiveBatchCache(Supplier<T> factory) {
@@ -24,17 +23,17 @@ public class ReactiveBatchCache<T> {
 		OwnerTrace.of(this).alias("bcache");
 	}
 	public ExecutorService executor() {
-		return loop.executor();
+		return thread.executor();
 	}
 	public ReactiveBatchCache<T> executor(ExecutorService executor) {
-		loop.executor(executor);
+		thread.executor(executor);
 		return this;
 	}
 	public boolean weak() {
-		return loop.weak();
+		return thread.daemon();
 	}
 	public ReactiveBatchCache<T> weak(boolean weak) {
-		loop.weak(weak);
+		thread.daemon(weak);
 		return this;
 	}
 	public ReactiveBatchCache<T> draft(T value) {
@@ -45,11 +44,11 @@ public class ReactiveBatchCache<T> {
 	}
 	public synchronized ReactiveBatchCache<T> start() {
 		started = true;
-		loop.start();
+		thread.start();
 		return this;
 	}
 	public ReactiveBatchCache<T> stop() {
-		loop.stop();
+		thread.stop();
 		return this;
 	}
 	public synchronized T get() {

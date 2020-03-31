@@ -30,6 +30,9 @@ public class ReactiveFuture<T> {
 			} catch (ExecutionException e) {
 				exception = e.getCause();
 			} catch (InterruptedException e) {
+				/*
+				 * We should never get here, because the future is already completed and there's no waiting.
+				 */
 				Exceptions.sneak().handle(e);
 			}
 			reactive.state.value(new ReactiveValue<>(result, exception, false));

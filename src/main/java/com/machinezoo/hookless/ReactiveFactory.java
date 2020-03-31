@@ -9,48 +9,55 @@ public class ReactiveFactory<T> {
 	public Supplier<T> supplier() {
 		return supplier;
 	}
+	private final CompletableFuture<T> future = new CompletableFuture<>();
+	private final ReactiveThread thread;
 	public ReactiveFactory(Supplier<T> supplier) {
 		this.supplier = supplier;
-	}
-	private boolean started;
-	private final ReactiveLoop<T> loop = OwnerTrace
-		.of(new ReactiveLoop<T>() {
-			@Override protected void run() {
+		OwnerTrace.of(this).alias("factory");
+		thread = OwnerTrace
+			.of(new ReactiveThread(() -> {
 				T proposed;
 				try {
 					proposed = supplier.get();
-				} catch (Throwable e) {
-					if (CurrentReactiveScope.blocked())
-						return;
-					throw e;
+				} catch (Throwable ex) {
+					if (!CurrentReactiveScope.blocked()) {
+						future.completeExceptionally(ex);
+						ReactiveThread.current().stop();
+					}
+					return;
 				}
-				if (!CurrentReactiveScope.blocked())
-					loop.complete(proposed);
-			}
-		})
-		.parent(OwnerTrace.of(this).alias("factory"))
-		.target();
+				if (!CurrentReactiveScope.blocked()) {
+					future.complete(proposed);
+					ReactiveThread.current().stop();
+				}
+			}))
+			.parent(this)
+			.target();
+	}
+	private boolean started;
 	public synchronized CompletableFuture<T> start() {
 		if (!started) {
 			if (supplier == null)
 				throw new IllegalStateException("Specify supplier to run");
-			loop.start();
+			thread.start();
 		}
 		return future();
 	}
 	public synchronized void cancel() {
-		if (started)
-			loop.stop();
+		if (started) {
+			thread.stop();
+			future.completeExceptionally(new CancellationException());
+		}
 	}
 	public CompletableFuture<T> future() {
-		return loop.future();
+		return future();
 	}
 	public ReactiveFactory<T> executor(ExecutorService executor) {
-		loop.executor(executor);
+		thread.executor(executor);
 		return this;
 	}
 	public ExecutorService executor() {
-		return loop.executor();
+		return thread.executor();
 	}
 	@Override public String toString() {
 		return OwnerTrace.of(this).toString();

@@ -43,22 +43,21 @@ public class ReactivePoll<T> {
 		.parent(this)
 		.tag("role", "latest")
 		.target();
-	private final ReactiveLoop<Void> loop = OwnerTrace
-		.of(new ReactiveLoop<Void>()
-			.body(this::run))
+	private static final Logger logger = LoggerFactory.getLogger(ReactivePoll.class);
+	private final ReactiveThread thread = OwnerTrace
+		.of(new ReactiveThread(Exceptions.log(logger).runnable(this::run)))
 		.parent(this)
 		.target();
-	private static final Logger logger = LoggerFactory.getLogger(ReactivePoll.class);
 	public ReactivePoll(Supplier<T> factory) {
 		Objects.requireNonNull(factory);
 		this.factory = factory;
 		OwnerTrace.of(this).alias("poll");
 	}
 	public ExecutorService executor() {
-		return loop.executor();
+		return thread.executor();
 	}
 	public ReactivePoll<T> executor(ExecutorService executor) {
-		loop.executor(executor);
+		thread.executor(executor);
 		return this;
 	}
 	public synchronized ReactivePoll<T> initial(T value) {
@@ -76,12 +75,12 @@ public class ReactivePoll<T> {
 	public synchronized ReactivePoll<T> start() {
 		if (!started) {
 			started = true;
-			loop.start();
+			thread.start();
 		}
 		return this;
 	}
 	public ReactivePoll<T> stop() {
-		loop.stop();
+		thread.stop();
 		return this;
 	}
 	public T get() {
