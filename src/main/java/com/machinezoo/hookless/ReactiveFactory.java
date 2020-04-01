@@ -50,7 +50,7 @@ public class ReactiveFactory<T> {
 		}
 	}
 	public CompletableFuture<T> future() {
-		return future();
+		return future;
 	}
 	public ReactiveFactory<T> executor(Executor executor) {
 		thread.executor(executor);
