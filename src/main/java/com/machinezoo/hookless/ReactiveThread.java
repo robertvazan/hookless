@@ -2,6 +2,8 @@ package com.machinezoo.hookless;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.*;
+import org.slf4j.*;
 import com.machinezoo.noexception.*;
 import io.micrometer.core.instrument.*;
 import io.micrometer.core.instrument.Timer;
@@ -59,6 +61,32 @@ public class ReactiveThread {
 	}
 	protected void run() {
 		runnable.run();
+	}
+	/*
+	 * We will mirror Java Thread's exception handlers. We cannot use Java's exception handler interface,
+	 * because we need different type for the first parameter. We will use BiConsumer instead of specialized type
+	 * in order to keep the API simple and minimal.
+	 * 
+	 * Global handler is volatile to avoid excessive synchronization.
+	 */
+	private static final Logger logger = LoggerFactory.getLogger(ReactiveThread.class);
+	private static volatile BiConsumer<ReactiveThread, Throwable> handlerDefault = (t, ex) -> logger.error("Unhandled exception in reactive thread.", ex);
+	public static void handlerDefault(BiConsumer<ReactiveThread, Throwable> handler) {
+		Objects.requireNonNull(handler);
+		handlerDefault = handler;
+	}
+	public static BiConsumer<ReactiveThread, Throwable> handlerDefault() {
+		return handlerDefault;
+	}
+	private BiConsumer<ReactiveThread, Throwable> handler = (t, ex) -> handlerDefault.accept(t, ex);
+	public synchronized ReactiveThread handler(BiConsumer<ReactiveThread, Throwable> handler) {
+		Objects.requireNonNull(handler);
+		ensureNotStarted();
+		this.handler = handler;
+		return this;
+	}
+	public synchronized BiConsumer<ReactiveThread, Throwable> handler() {
+		return handler;
 	}
 	/*
 	 * Since reactive thread is not really a thread but rather a fiber, it needs an actual thread to run on.
@@ -170,14 +198,11 @@ public class ReactiveThread {
 				 * Silently ignore exceptions when the reactive computation is blocking, because they are normal.
 				 */
 				if (!scope.blocked()) {
-					/*
-					 * Nothing to do with the exception, so at least log it.
-					 */
-					Exceptions.log().handle(ex);
+					running.remove(this);
 					synchronized (this) {
 						stopped = true;
+						Exceptions.log(logger).run(() -> handler.accept(this, ex));
 					}
-					running.remove(this);
 					return;
 				}
 			}
@@ -213,7 +238,7 @@ public class ReactiveThread {
 		 * TODO: In the future, we might want to use weak references at least for the queued reactive threads,
 		 * which would limit GC interference to the currently executing reactive threads, which are limited by thread pool size.
 		 */
-		executor.execute(Exceptions.log().runnable(this::iterate));
+		executor.execute(Exceptions.log(logger).runnable(this::iterate));
 	}
 	private synchronized void invalidate() {
 		/*

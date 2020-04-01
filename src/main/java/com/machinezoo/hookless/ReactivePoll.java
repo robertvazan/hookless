@@ -45,7 +45,7 @@ public class ReactivePoll<T> {
 		.target();
 	private static final Logger logger = LoggerFactory.getLogger(ReactivePoll.class);
 	private final ReactiveThread thread = OwnerTrace
-		.of(new ReactiveThread(Exceptions.log(logger).runnable(this::run)))
+		.of(new ReactiveThread(this::run))
 		.parent(this)
 		.target();
 	public ReactivePoll(Supplier<T> factory) {
