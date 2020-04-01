@@ -94,7 +94,7 @@ public class ReactiveThread {
 	}
 	/*
 	 * Java Thread has several methods for monitoring thread state. We can create their reactive equivalents.
-	 * TODO: Add monitoring methods when there's time and need.
+	 * TODO: Add monitoring methods when there's time and need. Use reactive variable, possibly lazily initialized.
 	 * 
 	 * Supportable state monitoring methods (all reactive):
 	 * - getState()
