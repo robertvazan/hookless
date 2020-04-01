@@ -22,10 +22,10 @@ public class ReactiveBatchCache<T> {
 		this.factory = factory;
 		OwnerTrace.of(this).alias("bcache");
 	}
-	public ExecutorService executor() {
+	public Executor executor() {
 		return thread.executor();
 	}
-	public ReactiveBatchCache<T> executor(ExecutorService executor) {
+	public ReactiveBatchCache<T> executor(Executor executor) {
 		thread.executor(executor);
 		return this;
 	}

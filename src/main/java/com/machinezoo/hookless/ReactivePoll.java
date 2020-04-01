@@ -53,10 +53,10 @@ public class ReactivePoll<T> {
 		this.factory = factory;
 		OwnerTrace.of(this).alias("poll");
 	}
-	public ExecutorService executor() {
+	public Executor executor() {
 		return thread.executor();
 	}
-	public ReactivePoll<T> executor(ExecutorService executor) {
+	public ReactivePoll<T> executor(Executor executor) {
 		thread.executor(executor);
 		return this;
 	}

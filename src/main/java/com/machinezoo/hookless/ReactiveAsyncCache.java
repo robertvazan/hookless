@@ -14,8 +14,8 @@ public class ReactiveAsyncCache<T> {
 	private static final Counter exceptionCount = Metrics.counter("hookless.cache.async.exceptions");
 	private static final Logger logger = LoggerFactory.getLogger(ReactiveAsyncCache.class);
 	private final Supplier<T> factory;
-	private ExecutorService executor = ReactiveExecutor.instance();
-	public ReactiveAsyncCache<T> executor(ExecutorService executor) {
+	private Executor executor = ReactiveExecutor.instance();
+	public ReactiveAsyncCache<T> executor(Executor executor) {
 		Objects.requireNonNull(executor);
 		this.executor = executor;
 		return this;
@@ -83,7 +83,7 @@ public class ReactiveAsyncCache<T> {
 	}
 	private void schedule() {
 		sample = Timer.start(Clock.SYSTEM);
-		executor.submit(Exceptions.log(logger).runnable(this::run));
+		executor.execute(Exceptions.log(logger).runnable(this::run));
 	}
 	private void run() {
 		Timer.Sample sample = this.sample;

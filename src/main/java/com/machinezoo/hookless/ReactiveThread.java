@@ -64,14 +64,14 @@ public class ReactiveThread {
 	 * Since reactive thread is not really a thread but rather a fiber, it needs an actual thread to run on.
 	 * We allow configuration of executor, so that heavy reactive threads can be kept off the main reactive executor.
 	 */
-	private ExecutorService executor = ReactiveExecutor.instance();
-	public synchronized ReactiveThread executor(ExecutorService executor) {
+	private Executor executor = ReactiveExecutor.instance();
+	public synchronized ReactiveThread executor(Executor executor) {
 		Objects.requireNonNull(executor);
 		ensureNotStarted();
 		this.executor = executor;
 		return this;
 	}
-	public synchronized ExecutorService executor() {
+	public synchronized Executor executor() {
 		return executor;
 	}
 	/*
@@ -199,7 +199,7 @@ public class ReactiveThread {
 		 * TODO: In the future, we might want to use weak references at least for the queued reactive threads,
 		 * which would limit GC interference to the currently executing reactive threads, which are limited by thread pool size.
 		 */
-		executor.submit(Exceptions.log().runnable(this::iterate));
+		executor.execute(Exceptions.log().runnable(this::iterate));
 	}
 	private synchronized void invalidate() {
 		/*

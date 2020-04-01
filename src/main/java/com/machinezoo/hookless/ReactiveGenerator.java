@@ -18,11 +18,11 @@ public class ReactiveGenerator<T> {
 		this.factory = factory;
 		return this;
 	}
-	private ExecutorService executor = ReactiveExecutor.instance();
-	public ExecutorService executor() {
+	private Executor executor = ReactiveExecutor.instance();
+	public Executor executor() {
 		return executor;
 	}
-	public ReactiveGenerator<T> executor(ExecutorService executor) {
+	public ReactiveGenerator<T> executor(Executor executor) {
 		this.executor = executor;
 		return this;
 	}
@@ -141,7 +141,7 @@ public class ReactiveGenerator<T> {
 		});
 	}
 	private void schedule() {
-		executor.submit(Exceptions.log(logger).runnable(this::refresh));
+		executor.execute(Exceptions.log(logger).runnable(this::refresh));
 	}
 	private void refresh() {
 		ReactiveScope scope = OwnerTrace.of(new ReactiveScope())

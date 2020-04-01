@@ -52,11 +52,11 @@ public class ReactiveFactory<T> {
 	public CompletableFuture<T> future() {
 		return future();
 	}
-	public ReactiveFactory<T> executor(ExecutorService executor) {
+	public ReactiveFactory<T> executor(Executor executor) {
 		thread.executor(executor);
 		return this;
 	}
-	public ExecutorService executor() {
+	public Executor executor() {
 		return thread.executor();
 	}
 	@Override public String toString() {
