@@ -24,9 +24,9 @@ import io.micrometer.core.instrument.Timer;
 public class ReactiveThread {
 	/*
 	 * The thread can be in three states: initialized, running, and stopped. Initialized state allows changes to configuration.
-	 * Stopped state is not explicitly tracked, because it can be obtained cheaply from thread's CompletableFuture.
 	 */
 	private boolean started;
+	private boolean stopped;
 	private void ensureNotStarted() {
 		if (started)
 			throw new IllegalStateException();
@@ -93,20 +93,33 @@ public class ReactiveThread {
 		return daemon;
 	}
 	/*
-	 * Java Thread doesn't expose any Future, but it exposes blocking and non-blocking methods to query thread run state.
-	 * Since we want to keep approximate API parity, but we cannot expose blocking or non-reactive methods,
-	 * we will associate every reactive thread with reactive future that applications can query.
-	 * We have a choice between CompletableFuture and ReactiveFuture. We will expose both for convenience.
-	 * We will construct CompletableFuture eagerly, because it is just a cheap object allocation.
-	 * Reactive future is constructed on demand, because it is relatively heavy.
+	 * Java Thread has several methods for monitoring thread state. We can create their reactive equivalents.
+	 * TODO: Add monitoring methods when there's time and need.
+	 * 
+	 * Supportable state monitoring methods (all reactive):
+	 * - getState()
+	 * - isAlive()
+	 * - join()
+	 *
+	 * Supportable thread states:
+	 * - NEW
+	 * - RUNNABLE - when new iteration is scheduled or already running
+	 * - BLOCKED - when waiting on reactive trigger and last value is blocking
+	 * - WAITING - when waiting on reactive trigger and last value is not blocking
+	 * - TERMINATED
+	 * 
+	 * Unsupportable APIs of Java Thread:
+	 * - join(long)
+	 * - join(long, int)
+	 * - Thread.State.TIMED_WAITING
+	 * 
+	 * It is tempting to provide this functionality using futures (completable or reactive),
+	 * but that is hopelessly buggy for daemon reactive threads (that might leave futures uncompleted when GCed),
+	 * unnecessarily expands features beyond Java's Thread, and it duplicates functionality from reactive futures.
+	 * 
+	 * We will not create equivalents of enumeration methods from Java Thread, but we will offer current() method,
+	 * which is indispensable, because it allows calling stop() on the current thread without holding a reference to it.
 	 */
-	private CompletableFuture<Void> completable = new CompletableFuture<>();
-	public synchronized CompletableFuture<Void> completable() {
-		return completable;
-	}
-	public ReactiveFuture<Void> future() {
-		return ReactiveFuture.wrap(completable());
-	}
 	private static final ThreadLocal<ReactiveThread> current = new ThreadLocal<>();
 	public static ReactiveThread current() {
 		return current.get();
@@ -131,9 +144,8 @@ public class ReactiveThread {
 		synchronized (this) {
 			/*
 			 * In case stop() was called while we were waiting in executor queue.
-			 * This has to be checked in synchronized block, because stop() cleans up instance variables we use here.
 			 */
-			if (completable.isDone())
+			if (stopped)
 				return;
 			sample = this.sample;
 			this.sample = null;
@@ -159,9 +171,12 @@ public class ReactiveThread {
 				 */
 				if (!scope.blocked()) {
 					/*
-					 * Expose the exception through the future, so that it can be observed somehow.
+					 * Nothing to do with the exception, so at least log it.
 					 */
-					completable.completeExceptionally(ex);
+					Exceptions.log().handle(ex);
+					synchronized (this) {
+						stopped = true;
+					}
 					running.remove(this);
 					return;
 				}
@@ -170,9 +185,8 @@ public class ReactiveThread {
 		synchronized (this) {
 			/*
 			 * In case stop() was called while the runnable was running.
-			 * This has to be checked in synchronized block, because concurr stop() touches the same instance variables.
 			 */
-			if (completable.isDone())
+			if (stopped)
 				return;
 			if (scope.blocked())
 				pins = scope.pins();
@@ -203,10 +217,10 @@ public class ReactiveThread {
 	}
 	private synchronized void invalidate() {
 		/*
-		 * We could receive invalidation callback after close() was called.
+		 * We could receive invalidation callback after stop() was called.
 		 * In that case the trigger was already destroyed and we have nothing to do here.
 		 */
-		if (completable.isDone())
+		if (stopped)
 			return;
 		trigger.close();
 		schedule();
@@ -221,7 +235,7 @@ public class ReactiveThread {
 		/*
 		 * It is allowed to stop the thread before it is started. In that case we don't run even a single iteration.
 		 */
-		if (completable.isDone())
+		if (stopped)
 			return this;
 		if (!daemon)
 			running.add(this);
@@ -232,7 +246,7 @@ public class ReactiveThread {
 		/*
 		 * All of the code below has to tolerate double stop() calls.
 		 */
-		completable.complete(null);
+		stopped = true;
 		running.remove(this);
 		/*
 		 * Eagerly clean up all the reactive resources.
