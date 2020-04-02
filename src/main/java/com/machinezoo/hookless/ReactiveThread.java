@@ -231,15 +231,9 @@ public class ReactiveThread {
 		sample = Timer.start(Clock.SYSTEM);
 		/*
 		 * Method iterate() should never throw, but let's make sure.
-		 * 
-		 * This temporarily creates a strong reference to this reactive thread, which can prevent it from being GCed.
-		 * But since reactive thread should be normally cold (rarely firing) and executors should have low latencies (for interactive UIs),
-		 * it is very unlikely that reactive thread will not be GCed on time. Running iterate() method has the same effect.
-		 * If the reactive thread is intended to be hot (running all the time), application code should stop it explicitly.
-		 * TODO: In the future, we might want to use weak references at least for the queued reactive threads,
-		 * which would limit GC interference to the currently executing reactive threads, which are limited by thread pool size.
+		 * Use weak Runnable to allow GCing of reactive threads that are only referenced from thread pool queue.
 		 */
-		executor.execute(Exceptions.log(logger).runnable(this::iterate));
+		executor.execute(Exceptions.log(logger).runnable(new WeakRunnable<>(this, ReactiveThread::iterate)));
 	}
 	private synchronized void invalidate() {
 		/*
