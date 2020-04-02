@@ -3,6 +3,7 @@ package com.machinezoo.hookless;
 
 import java.util.*;
 import java.util.function.*;
+import com.machinezoo.hookless.utils.*;
 import io.micrometer.core.instrument.*;
 import io.micrometer.core.instrument.Timer;
 

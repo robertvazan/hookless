@@ -3,6 +3,7 @@ package com.machinezoo.hookless;
 
 import java.util.concurrent.*;
 import java.util.function.*;
+import com.machinezoo.hookless.utils.*;
 
 public class ReactiveFactory<T> {
 	private final Supplier<T> supplier;

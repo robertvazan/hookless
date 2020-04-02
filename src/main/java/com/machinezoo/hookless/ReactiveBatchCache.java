@@ -4,6 +4,7 @@ package com.machinezoo.hookless;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
+import com.machinezoo.hookless.utils.*;
 
 public class ReactiveBatchCache<T> {
 	private final Supplier<T> factory;

@@ -1,5 +1,5 @@
 // Part of Hookless: https://hookless.machinezoo.com
-package com.machinezoo.hookless;
+package com.machinezoo.hookless.utils;
 
 import java.util.*;
 import java.util.concurrent.atomic.*;

@@ -3,6 +3,7 @@ package com.machinezoo.hookless;
 
 import java.util.*;
 import java.util.concurrent.*;
+import com.machinezoo.hookless.utils.*;
 import com.machinezoo.noexception.*;
 
 public class ReactiveFuture<T> {
