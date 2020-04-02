@@ -128,25 +128,23 @@ public class ReactiveThread {
 	 * Supportable state monitoring methods (all reactive):
 	 * - getState()
 	 * - isAlive()
-	 * - join()
+	 * - join() - reactive blocking
+	 * - join(long) - timeout relative to first such call to avoid cascading timeouts
+	 * - join(long, int)
 	 *
 	 * Supportable thread states:
 	 * - NEW
 	 * - RUNNABLE - when new iteration is scheduled or already running
 	 * - BLOCKED - when waiting on reactive trigger and last value is blocking
 	 * - WAITING - when waiting on reactive trigger and last value is not blocking
+	 * - TIMED_WAITING - not applicable to reactive threads
 	 * - TERMINATED
-	 * 
-	 * Unsupportable APIs of Java Thread:
-	 * - join(long)
-	 * - join(long, int)
-	 * - Thread.State.TIMED_WAITING
 	 * 
 	 * It is tempting to provide this functionality using futures (completable or reactive),
 	 * but that is hopelessly buggy for daemon reactive threads (that might leave futures uncompleted when GCed),
 	 * unnecessarily expands features beyond Java's Thread, and it duplicates functionality from reactive futures.
 	 * 
-	 * We will not create equivalents of enumeration methods from Java Thread, but we will offer current() method,
+	 * We will not create equivalents of thread enumeration methods from Java Thread, but we will offer current() method,
 	 * which is indispensable, because it allows calling stop() on the current thread without holding a reference to it.
 	 */
 	private static final ThreadLocal<ReactiveThread> current = new ThreadLocal<>();
