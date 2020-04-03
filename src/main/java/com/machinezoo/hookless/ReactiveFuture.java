@@ -201,17 +201,13 @@ public class ReactiveFuture<T> {
 					ReactiveThread.current().stop();
 					return;
 				}
-				try {
-					T proposed = supplier.get();
-					if (!CurrentReactiveScope.blocked()) {
-						future.complete(proposed);
-						ReactiveThread.current().stop();
-					}
-				} catch (Throwable ex) {
-					if (!CurrentReactiveScope.blocked()) {
-						future.completeExceptionally(ex);
-						ReactiveThread.current().stop();
-					}
+				ReactiveValue<T> value = ReactiveValue.capture(supplier);
+				if (!CurrentReactiveScope.blocked()) {
+					if (value.exception() != null)
+						future.completeExceptionally(value.exception());
+					else
+						future.complete(value.result());
+					ReactiveThread.current().stop();
 				}
 			})
 			.executor(executor);
