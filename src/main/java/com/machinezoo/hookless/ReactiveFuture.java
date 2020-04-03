@@ -4,6 +4,7 @@ package com.machinezoo.hookless;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.*;
 import com.google.common.util.concurrent.*;
 import com.machinezoo.hookless.time.*;
 import com.machinezoo.hookless.utils.*;
@@ -35,6 +36,7 @@ public class ReactiveFuture<T> {
 		OwnerTrace.of(this).alias("future");
 		Objects.requireNonNull(completable);
 		this.completable = completable;
+		OwnerTrace.of(completable).parent(this);
 		/*
 		 * If the future is already completed, the callback is invoked before whenComplete() returns.
 		 * If it is not completed yet, callback is invoked synchronously.
@@ -57,6 +59,7 @@ public class ReactiveFuture<T> {
 	 */
 	private static final Map<CompletableFuture<?>, ReactiveFuture<?>> associations = new WeakHashMap<>();
 	@SuppressWarnings("unchecked") public static synchronized <T> ReactiveFuture<T> wrap(CompletableFuture<T> completable) {
+		Objects.requireNonNull(completable);
 		ReactiveFuture<?> cached = associations.get(completable);
 		if (cached != null)
 			return (ReactiveFuture<T>)cached;
@@ -125,6 +128,7 @@ public class ReactiveFuture<T> {
 	 * This is the only synchronized get* method due to the timestamp field access.
 	 */
 	public synchronized T get(Duration timeout) {
+		Objects.requireNonNull(timeout);
 		ReactiveValue<T> value = variable.value();
 		/*
 		 * First check whether we have value available even if the timeout has been already reached.
@@ -160,5 +164,72 @@ public class ReactiveFuture<T> {
 		if (value.blocking())
 			CurrentReactiveScope.block();
 		return OwnerTrace.of(this) + " = " + (value.blocking() ? "(pending)" : Objects.toString(value.exception(), Objects.toString(value.result())));
+	}
+	/*
+	 * The following methods are equivalents of CompletableFuture's run/supplyAsync methods.
+	 * Provided reactive supplier/runnable is executed repeatedly until it completes without blocking.
+	 * 
+	 * These methods serve as a bridge from reactive computations to the async world of CompletableFuture,
+	 * which is why they return CompletableFuture instead of reactive future.
+	 */
+	public static <T> CompletableFuture<T> supplyReactive(Supplier<T> supplier, Executor executor) {
+		Objects.requireNonNull(supplier);
+		Objects.requireNonNull(executor);
+		CompletableFuture<T> future = new CompletableFuture<T>();
+		/*
+		 * We have to return only CompletableFuture, but it is convenient to have reactive future too.
+		 * We can then avoid complicated callbacks needed just to implement cancellation.
+		 */
+		ReactiveFuture<T> reactive = wrap(future);
+		/*
+		 * The reactive thread is configured to run in non-daemon mode, so that it keeps running until the CompletableFuture is completed.
+		 * This reflects the way corresponding run/supplyAsync methods in CompletableFuture work.
+		 * This is not much of an issue, because the reactive computations are typically very short.
+		 * There is unfortunately still a small risk that these reactive computations will block forever.
+		 * If that is a concern for the application, it should wrap the supplier/runnable with custom timeout check.
+		 */
+		ReactiveThread thread = new ReactiveThread()
+			.runnable(() -> {
+				/*
+				 * Allow explicit cancellation. CompletableFuture also supports this feature but only before the supplier is started.
+				 * Since the reactive supplier is executed multiple times, it is possible to cancel it when already running.
+				 * This is a little bit incorrect, because we are ignoring the flag that was passed to future's cancel() method.
+				 * Checking state of reactive future instead of the CompletableFuture speeds up termination and release of resources.
+				 * We also allow cancellation by normal or exceptional completion of the future just like run/supplyAsync does.
+				 */
+				if (reactive.done()) {
+					ReactiveThread.current().stop();
+					return;
+				}
+				try {
+					T proposed = supplier.get();
+					if (!CurrentReactiveScope.blocked()) {
+						future.complete(proposed);
+						ReactiveThread.current().stop();
+					}
+				} catch (Throwable ex) {
+					if (!CurrentReactiveScope.blocked()) {
+						future.completeExceptionally(ex);
+						ReactiveThread.current().stop();
+					}
+				}
+			})
+			.executor(executor);
+		OwnerTrace.of(thread).parent(future);
+		thread.start();
+		return future;
+	}
+	public static <T> CompletableFuture<T> supplyReactive(Supplier<T> supplier) {
+		return supplyReactive(supplier, ReactiveExecutor.instance());
+	}
+	public static CompletableFuture<Void> runReactive(Runnable runnable, Executor executor) {
+		Objects.requireNonNull(runnable);
+		return supplyReactive(() -> {
+			runnable.run();
+			return null;
+		}, executor);
+	}
+	public static CompletableFuture<Void> runReactive(Runnable runnable) {
+		return runReactive(runnable, ReactiveExecutor.instance());
 	}
 }

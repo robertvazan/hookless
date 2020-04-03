@@ -200,8 +200,12 @@ public class ReactiveThread {
 					running.remove(this);
 					synchronized (this) {
 						stopped = true;
-						Exceptions.log(logger).run(() -> handler.accept(this, ex));
 					}
+					/*
+					 * Handler must run within the reactive scope, so that it can contain reactive code.
+					 * We will run it outside of the synchronized block, because it could be an expensive operation.
+					 */
+					Exceptions.log(logger).run(() -> handler.accept(this, ex));
 					return;
 				}
 			}
