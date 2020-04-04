@@ -1,3 +1,4 @@
+// Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless;
 
 import java.util.*;
@@ -223,6 +224,10 @@ public class ReactiveThread {
 					.callback(this::invalidate))
 				.parent(this)
 				.target();
+			/*
+			 * Normally we would arm outside of the synchronized block, but we have to watch out for concurrent stop().
+			 * Our invalidation callback might run during arm() call, but it doesn't do anything unsafe.
+			 */
 			trigger.arm(scope.versions());
 		}
 	}

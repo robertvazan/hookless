@@ -1,7 +1,6 @@
 // Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless;
 
-import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import org.slf4j.*;
@@ -29,10 +28,10 @@ import io.opentracing.util.*;
  * Some calls can be skipped and the trigger will still behave reasonably.
  * Methods fire() and close() may be called repeatedly.
  * 
- * Trigger implements Closeable, so that it can be used in try-with-resources,
+ * Trigger implements AutoCloseable, so that it can be used in try-with-resources,
  * although that's usually only useful in unit tests.
  */
-public class ReactiveTrigger implements Closeable {
+public class ReactiveTrigger implements AutoCloseable {
 	public ReactiveTrigger() {
 		OwnerTrace.of(this).alias("trigger");
 	}
