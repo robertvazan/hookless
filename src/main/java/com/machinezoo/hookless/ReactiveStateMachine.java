@@ -70,7 +70,11 @@ public class ReactiveStateMachine<T> {
 		return new ReactiveStateMachine<>(initial, supplier);
 	}
 	public static <T> ReactiveStateMachine<T> supply(Supplier<T> supplier) {
-		return supply(new ReactiveValue<>(null, null, true), supplier);
+		/*
+		 * We don't know whether null is a reasonable fallback. Throwing is always correct (although not very efficient).
+		 * Constructing exceptions is expensive, but we will favor useful stack trace over fast preallocated exception object.
+		 */
+		return supply(new ReactiveValue<>(new ReactiveBlockingException(), true), supplier);
 	}
 	public static ReactiveStateMachine<Void> run(ReactiveValue<Void> initial, Runnable runnable) {
 		Objects.requireNonNull(runnable);
@@ -80,7 +84,7 @@ public class ReactiveStateMachine<T> {
 		});
 	}
 	public static ReactiveStateMachine<Void> run(Runnable runnable) {
-		return run(new ReactiveValue<>(null, null, true), runnable);
+		return run(new ReactiveValue<>(new ReactiveBlockingException(), true), runnable);
 	}
 	/*
 	 * Reactive state machine is implemented using reactive primitives: scope, trigger, and pins.
@@ -98,11 +102,13 @@ public class ReactiveStateMachine<T> {
 	 */
 	@SuppressWarnings("resource") public synchronized void advance() {
 		/*
-		 * Non-null trigger indicates the current state is still valid.
-		 * Do not advance the state machine in this case as a convenience to application code
+		 * Do not advance the state machine if it is still valid. This is a convenience to application code
 		 * that can now try to advance the state machine redundantly without it getting costly.
+		 * 
+		 * We could also check for non-null trigger, which would be faster, but that would make the check non-reactive,
+		 * the controlling computation wouldn't run again when the state is invalidated, and advancement would stop forever.
 		 */
-		if (trigger != null)
+		if (valid.get())
 			return;
 		ReactiveScope scope = OwnerTrace.of(new ReactiveScope())
 			.parent(this)
