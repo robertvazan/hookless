@@ -52,86 +52,75 @@ import com.machinezoo.hookless.utils.*;
  */
 public class ReactiveCollections {
 	/*
-	 * There are many ways to supply options to wrapping methods, but NIO-style ellipsis option parameters are neat.
-	 * We could use an option object, but that would make the API more verbose when none or just one option is used.
-	 * We could also have a builder where options are specified, but this is again verbose for typical cases.
-	 * Having ellipsis option parameters has the advantage that different wrapper methods can have different defaults.
+	 * There are many ways to supply options to wrapping methods:
+	 * - configure builder object and then call collection-wrapping methods on it
+	 * - add NIO-style ellipsis option parameters to every method
+	 * - add an overload for every method that takes an options object
+	 * - provide many variations and overloads of the collection-wrapping methods
+	 * 
+	 * We will go with options object, because it gives us very low verbosity combined with very high flexibility.
+	 * 
+	 * Since most options are boolean, we then have a choice between boolean parameter and assuming true parameter.
+	 * We will assume true parameter, because this favors the much more common static configuration of reactive collections.
 	 */
-	public static interface Option {
-	}
-	private static class Configuration {
-		boolean compareValues;
-		boolean ignoreWriteStatus;
-		boolean ignoreWriteExceptions;
-		boolean silenceWriteStatus;
-		boolean silenceWriteExceptions;
-		boolean perItem;
-	}
-	private static interface ExecutableOption extends Option {
-		void apply(Configuration config);
-	}
-	/*
-	 * Checking for full equality during writes may reduce the number of invalidations.
-	 * False by default since standard Java collections don't do any equality check during item writes.
-	 */
-	public static final Option COMPARE_VALUES = new ExecutableOption() {
-		@Override public void apply(Configuration config) {
-			config.compareValues = true;
+	public static class Options {
+		/*
+		 * Checking for full equality during writes may reduce the number of invalidations.
+		 * False by default since standard Java collections don't do any equality check during item writes.
+		 */
+		private boolean compareValues;
+		public Options compareValues() {
+			compareValues = true;
+			return this;
 		}
-	};
-	/*
-	 * Writes may signal collection state via return value or specific exceptions.
-	 * By default we observe the collection as a dependency to account for it.
-	 * We let callers disable this feature in case they know they wouldn't check status/exceptions
-	 * and they wish to avoid collecting unnecessary dependencies.
-	 * This is equivalent to wrapping writes with ReactiveScope.ignore().
-	 * This has no effect on methods that are inherently read-write.
-	 * False by default to honor read-write semantics of standard Java collections.
-	 */
-	public static final Option IGNORE_WRITE_STATUS = new ExecutableOption() {
-		@Override public void apply(Configuration config) {
-			config.ignoreWriteStatus = true;
+		/*
+		 * Writes may signal collection state via return value or specific exceptions.
+		 * By default we observe the collection as a dependency to account for it.
+		 * We let callers disable this feature in case they know they wouldn't check status/exceptions
+		 * and they wish to avoid collecting unnecessary dependencies.
+		 * This is equivalent to wrapping writes with ReactiveScope.ignore().
+		 * This has no effect on methods that are inherently read-write.
+		 * False by default to honor read-write semantics of standard Java collections.
+		 */
+		private boolean ignoreWriteStatus;
+		public Options ignoreWriteStatus() {
+			ignoreWriteStatus = true;
+			return this;
 		}
-	};
-	public static final Option IGNORE_WRITE_EXCEPTIONS = new ExecutableOption() {
-		@Override public void apply(Configuration config) {
-			config.ignoreWriteExceptions = true;
+		private boolean ignoreWriteExceptions;
+		public Options ignoreWriteExceptions() {
+			ignoreWriteExceptions = true;
+			return this;
 		}
-	};
-	/*
-	 * If write status or exceptions are not observed as dependencies,
-	 * but they are still used by callers, it can result in surprisingly non-reactive code.
-	 * To prevent that, we can silence return status and state-related exceptions from write methods.
-	 * Callers are then forced to be explicit about whether they want read or write operation.
-	 * This has no effect on methods that are inherently read-write.
-	 * False by default to honor interface semantics of Java collections.
-	 */
-	public static final Option SILENCE_WRITE_STATUS = new ExecutableOption() {
-		@Override public void apply(Configuration config) {
-			config.silenceWriteStatus = true;
+		/*
+		 * If write status or exceptions are not observed as dependencies,
+		 * but they are still used by callers, it can result in surprisingly non-reactive code.
+		 * To prevent that, we can silence return status and state-related exceptions from write methods.
+		 * Callers are then forced to be explicit about whether they want read or write operation.
+		 * This has no effect on methods that are inherently read-write.
+		 * False by default to honor interface semantics of Java collections.
+		 */
+		private boolean silenceWriteStatus;
+		public Options silenceWriteStatus() {
+			silenceWriteStatus = true;
+			return this;
 		}
-	};
-	public static final Option SILENCE_WRITE_EXCEPTIONS = new ExecutableOption() {
-		@Override public void apply(Configuration config) {
-			config.silenceWriteExceptions = true;
+		private boolean silenceWriteExceptions;
+		public Options silenceWriteExceptions() {
+			silenceWriteExceptions = true;
+			return this;
 		}
-	};
-	/*
-	 * Collections have single reactive variable by default.
-	 * This matches document-level granularity preferred for reactive objects in hookless.
-	 * It is however often useful to have one reactive variable per item,
-	 * especially in large maps or maps with heavy values.
-	 */
-	public static final Option PER_ITEM = new ExecutableOption() {
-		@Override public void apply(Configuration config) {
-			config.perItem = true;
+		/*
+		 * Collections have single reactive variable by default.
+		 * This matches document-level granularity preferred for reactive objects in hookless.
+		 * It is however often useful to have one reactive variable per item,
+		 * especially in large maps or maps with heavy values.
+		 */
+		private boolean perItem;
+		public Options perItem() {
+			perItem = true;
+			return this;
 		}
-	};
-	private static Configuration configuration(Option[] options) {
-		Configuration config = new Configuration();
-		for (Option option : options)
-			((ExecutableOption)option).apply(config);
-		return config;
 	}
 	/*
 	 * Base class for both collections and iterators.
@@ -139,8 +128,8 @@ public class ReactiveCollections {
 	 */
 	private static class ReactiveCollectionObject {
 		final ReactiveVariable<Object> version;
-		final Configuration config;
-		ReactiveCollectionObject(Configuration config) {
+		final Options config;
+		ReactiveCollectionObject(Options config) {
 			version = OwnerTrace.of(new ReactiveVariable<Object>())
 				.parent(this)
 				.target();
@@ -205,7 +194,7 @@ public class ReactiveCollections {
 	 */
 	private static class ReactiveItemObject extends ReactiveCollectionObject {
 		final Map<Object, ReactiveVariable<Object>> kversions;
-		ReactiveItemObject(Configuration config) {
+		ReactiveItemObject(Options config) {
 			super(config);
 			/*
 			 * Synchronize on kversions, so that iterators and views share lock with the main collection.
@@ -296,13 +285,17 @@ public class ReactiveCollections {
 			return inner.next();
 		}
 	}
-	public static <T> Collection<T> collection(Collection<T> collection, Option... options) {
+	public static <T> Collection<T> collection(Collection<T> collection, Options options) {
 		Objects.requireNonNull(collection);
-		return new ReactiveCollection<>(collection, configuration(options));
+		Objects.requireNonNull(options);
+		return new ReactiveCollection<>(collection, options);
+	}
+	public static <T> Collection<T> collection(Collection<T> collection) {
+		return collection(collection, new Options());
 	}
 	private static class ReactiveCollection<T> extends ReactiveCollectionObject implements Collection<T> {
 		final Collection<T> inner;
-		ReactiveCollection(Collection<T> inner, Configuration config) {
+		ReactiveCollection(Collection<T> inner, Options config) {
 			super(config);
 			OwnerTrace.of(this).alias("collection");
 			this.inner = inner;
@@ -405,7 +398,7 @@ public class ReactiveCollections {
 	}
 	private static class ReactiveItemCollection<T> extends ReactiveItemObject implements Collection<T> {
 		final Collection<T> inner;
-		ReactiveItemCollection(Collection<T> inner, Configuration config) {
+		ReactiveItemCollection(Collection<T> inner, Options config) {
 			super(config);
 			OwnerTrace.of(this).alias("collection");
 			this.inner = inner;
@@ -553,13 +546,17 @@ public class ReactiveCollections {
 			invalidate();
 		}
 	}
-	public static <T> List<T> list(List<T> list, Option... options) {
+	public static <T> List<T> list(List<T> list, Options options) {
 		Objects.requireNonNull(list);
-		return new ReactiveList<>(list, configuration(options));
+		Objects.requireNonNull(options);
+		return new ReactiveList<>(list, options);
+	}
+	public static <T> List<T> list(List<T> list) {
+		return list(list, new Options());
 	}
 	private static class ReactiveList<T> extends ReactiveCollection<T> implements List<T> {
 		final List<T> inner;
-		ReactiveList(List<T> inner, Configuration config) {
+		ReactiveList(List<T> inner, Options config) {
 			super(inner, config);
 			OwnerTrace.of(this).alias("list");
 			this.inner = inner;
@@ -663,17 +660,20 @@ public class ReactiveCollections {
 			}
 		}
 	}
-	public static <T> Set<T> set(Set<T> set, Option... options) {
+	public static <T> Set<T> set(Set<T> set, Options options) {
 		Objects.requireNonNull(set);
-		Configuration config = configuration(options);
-		if (config.perItem)
-			return new ReactiveItemSet<>(set, config);
+		Objects.requireNonNull(options);
+		if (options.perItem)
+			return new ReactiveItemSet<>(set, options);
 		else
-			return new ReactiveSet<>(set, config);
+			return new ReactiveSet<>(set, options);
+	}
+	public static <T> Set<T> set(Set<T> set) {
+		return set(set, new Options());
 	}
 	private static class ReactiveSet<T> extends ReactiveCollection<T> implements Set<T> {
 		final Set<T> inner;
-		ReactiveSet(Set<T> inner, Configuration config) {
+		ReactiveSet(Set<T> inner, Options config) {
 			super(inner, config);
 			OwnerTrace.of(this).alias("set");
 			this.inner = inner;
@@ -701,7 +701,7 @@ public class ReactiveCollections {
 	}
 	private static class ReactiveItemSet<T> extends ReactiveItemCollection<T> implements Set<T> {
 		final Set<T> inner;
-		ReactiveItemSet(Set<T> inner, Configuration config) {
+		ReactiveItemSet(Set<T> inner, Options config) {
 			super(inner, config);
 			OwnerTrace.of(this).alias("set");
 			this.inner = inner;
@@ -727,17 +727,20 @@ public class ReactiveCollections {
 			return silenceStatus(changed);
 		}
 	}
-	public static <K, V> Map<K, V> map(Map<K, V> map, Option... options) {
+	public static <K, V> Map<K, V> map(Map<K, V> map, Options options) {
 		Objects.requireNonNull(map);
-		Configuration config = configuration(options);
-		if (config.perItem)
-			return new ReactiveItemMap<>(map, config);
+		Objects.requireNonNull(options);
+		if (options.perItem)
+			return new ReactiveItemMap<>(map, options);
 		else
-			return new ReactiveMap<>(map, config);
+			return new ReactiveMap<>(map, options);
+	}
+	public static <K, V> Map<K, V> map(Map<K, V> map) {
+		return map(map, new Options());
 	}
 	private static class ReactiveMap<K, V> extends ReactiveCollectionObject implements Map<K, V> {
 		final Map<K, V> inner;
-		ReactiveMap(Map<K, V> inner, Configuration config) {
+		ReactiveMap(Map<K, V> inner, Options config) {
 			super(config);
 			OwnerTrace.of(this).alias("map");
 			this.inner = inner;
@@ -810,7 +813,7 @@ public class ReactiveCollections {
 	}
 	private static class ReactiveItemMap<K, V> extends ReactiveItemObject implements Map<K, V> {
 		final Map<K, V> inner;
-		ReactiveItemMap(Map<K, V> inner, Configuration config) {
+		ReactiveItemMap(Map<K, V> inner, Options config) {
 			super(config);
 			OwnerTrace.of(this).alias("map");
 			this.inner = inner;
@@ -885,9 +888,13 @@ public class ReactiveCollections {
 			return OwnerTrace.of(this) + ": " + inner;
 		}
 	}
-	public static <T> Queue<T> queue(Queue<T> queue, Option... options) {
+	public static <T> Queue<T> queue(Queue<T> queue, Options options) {
 		Objects.requireNonNull(queue);
-		return new ReactiveQueue<>(queue, configuration(options));
+		Objects.requireNonNull(options);
+		return new ReactiveQueue<>(queue, options);
+	}
+	public static <T> Queue<T> queue(Queue<T> queue) {
+		return queue(queue, new Options());
 	}
 	/*
 	 * Queue can be configured ignore/silence write status and exceptions,
@@ -896,7 +903,7 @@ public class ReactiveCollections {
 	 */
 	private static class ReactiveQueue<T> extends ReactiveCollection<T> implements Queue<T> {
 		final Queue<T> inner;
-		ReactiveQueue(Queue<T> inner, Configuration config) {
+		ReactiveQueue(Queue<T> inner, Options config) {
 			super(inner, config);
 			OwnerTrace.of(this).alias("queue");
 			this.inner = inner;
