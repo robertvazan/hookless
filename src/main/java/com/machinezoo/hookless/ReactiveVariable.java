@@ -182,18 +182,7 @@ public class ReactiveVariable<T> {
 		 * but we have to make a copy of 'value' field, because we are going to access it several times.
 		 */
 		ReactiveValue<T> previous = this.value;
-		boolean equals;
-		if (equality)
-			equals = previous.equals(value);
-		else {
-			/*
-			 * When performing reference equality check, we compare references of reactive value's fields
-			 * rather than references to reactive value itself, because that's more useful and equally fast.
-			 * It makes reference equality work even when set() is called and new reactive value is created.
-			 */
-			equals = previous.result() == value.result() && previous.exception() == value.exception() && previous.blocking() == value.blocking();
-		}
-		if (!equals) {
+		if (!(equality ? previous.equals(value) : previous.same(value))) {
 			Set<ReactiveTrigger> notified = null;
 			synchronized (this) {
 				/*

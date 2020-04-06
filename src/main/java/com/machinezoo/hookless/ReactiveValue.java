@@ -79,13 +79,29 @@ public class ReactiveValue<T> {
 		if (obj == null || !(obj instanceof ReactiveValue))
 			return false;
 		@SuppressWarnings("unchecked") ReactiveValue<T> other = (ReactiveValue<T>)obj;
-		return Objects.equals(result, other.result) && Objects.equals(dump(exception), dump(other.exception)) && blocking == other.blocking;
+		/*
+		 * Cheapest comparisons first. This speeds up comparisons with negative result.
+		 */
+		if (blocking != other.blocking)
+			return false;
+		if ((exception != null) != (other.exception != null))
+			return false;
+		if ((result != null) != (other.result != null))
+			return false;
+		return Objects.equals(result, other.result) && Objects.equals(dump(exception), dump(other.exception));
 	}
 	@Override public int hashCode() {
 		/*
 		 * Reactive value is unlikely to be used as a hash key. We are free to make this inefficient.
 		 */
 		return Objects.hash(result, dump(exception), blocking);
+	}
+	/*
+	 * Some reactive computations only use fast reference equality.
+	 * This method does as much equality checking as possible without running any expensive operations.
+	 */
+	public boolean same(ReactiveValue<?> other) {
+		return result == other.result && exception == other.exception && blocking == other.blocking;
 	}
 	/*
 	 * There are more efficient ways to compare exceptions, but this crude solution will work for now.

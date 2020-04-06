@@ -178,10 +178,7 @@ public class ReactiveWorker<T> implements Supplier<T> {
 		 * Don't do anything if advancement of the state machine had no real effect on its output.
 		 * Equality logic is copied from reactive variable.
 		 */
-		boolean equal = equality
-			? fresh.equals(last)
-			: fresh.result() == last.result() && fresh.exception() == last.exception() && fresh.blocking() == last.blocking();
-		if (!equal) {
+		if (!(equality ? fresh.equals(last) : fresh.same(last))) {
 			/*
 			 * Output is definitely changing. Worker should be considered unused until the next get() call.
 			 */
