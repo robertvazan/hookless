@@ -49,7 +49,7 @@ public class ReactiveLazy<T> implements Supplier<T> {
 		 */
 		return generator.output().get();
 	}
-	@Override public synchronized String toString() {
+	@Override public String toString() {
 		return OwnerTrace.of(this) + " = " + generator.output();
 	}
 }
