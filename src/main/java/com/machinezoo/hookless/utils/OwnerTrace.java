@@ -60,11 +60,7 @@ public class OwnerTrace<T> {
 	 */
 	private static LoadingCache<Object, OwnerTraceData> all = CacheBuilder.newBuilder()
 		.weakKeys()
-		.build(new CacheLoader<Object, OwnerTraceData>() {
-			@Override public OwnerTraceData load(Object key) throws Exception {
-				return new OwnerTraceData(key);
-			}
-		});
+		.build(CacheLoader.from(OwnerTraceData::new));
 	public static <T> OwnerTrace<T> of(T target) {
 		return new OwnerTrace<T>(target, all.getUnchecked(target));
 	}
