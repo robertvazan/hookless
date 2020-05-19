@@ -176,10 +176,25 @@ public class ReactiveWorker<T> implements Supplier<T> {
 		if (fresh.blocking() && !last.blocking())
 			return;
 		/*
-		 * Don't do anything if advancement of the state machine had no real effect on its output.
-		 * Equality logic is copied from reactive variable.
+		 * Equality logic is copied from reactive variable, but we have to guard against exceptions,
+		 * because contrary to reactive variable, we cannot afford to propagate exceptions here.
 		 */
-		if (!(equality ? fresh.equals(last) : fresh.same(last))) {
+		boolean equal;
+		if (equality) {
+			try {
+				equal = fresh.equals(last);
+			} catch (Throwable ex) {
+				/*
+				 * Assuming change is the safe thing to do in case application-defined equals() throws.
+				 */
+				equal = false;
+			}
+		} else
+			equal = fresh.same(last);
+		/*
+		 * Don't do anything if advancement of the state machine had no real effect on its output.
+		 */
+		if (!equal) {
 			/*
 			 * Output is definitely changing. Worker should be considered unused until the next get() call.
 			 */
