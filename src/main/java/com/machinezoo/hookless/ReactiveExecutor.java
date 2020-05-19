@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import io.micrometer.core.instrument.*;
+import io.micrometer.core.instrument.Timer;
 
 /*
  * Latency-optimized executor designed for hookless. Currently it's just standard ThreadPoolExecutor with custom queue.
@@ -39,6 +40,7 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 	public long getEventCount() {
 		return eventCounter.get();
 	}
+	private static Timer taskTimer = Metrics.timer("hookless.executor.tasks");
 	/*
 	 * We will wrap every task submitted to the executor in order to make the tasks sortable by event/task ID.
 	 */
@@ -50,10 +52,20 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 		 */
 		final int depth;
 		final Runnable runnable;
+		final Timer.Sample sample;
 		ReactiveTask(long eventId, int depth, Runnable runnable) {
 			this.eventId = eventId;
 			this.runnable = runnable;
 			this.depth = depth;
+			/*
+			 * Task timers are only enabled for the common thread pool.
+			 * Tasks in other thread pools can be timed for example by creating ExecutorService wrapper
+			 * and then wrapping every task submitted to the executor.
+			 * 
+			 * By starting the timer sample here, we include queuing latency in the measurement.
+			 * Total latency is usually more important than throughput in hookless applications.
+			 */
+			sample = ReactiveExecutor.this == common ? Timer.start() : null;
 		}
 		boolean ownedBy(ReactiveExecutor executor) {
 			return executor == ReactiveExecutor.this;
@@ -93,6 +105,8 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 				 * Remove. Do not set to null as that might result in accumulation of state when threads are stopped and started in the pool.
 				 */
 				running.remove();
+				if (sample != null)
+					sample.stop(taskTimer);
 			}
 		}
 	}
@@ -138,7 +152,6 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 	});
 	static {
 		Metrics.gauge("hookless.executor.events", common, x -> x.getEventCount());
-		Metrics.gauge("hookless.executor.tasks", common, x -> x.getTaskCount());
 		Metrics.gauge("hookless.executor.threads", common, x -> x.getPoolSize());
 		Metrics.gauge("hookless.executor.queue", common, x -> x.getQueue().size());
 	}
