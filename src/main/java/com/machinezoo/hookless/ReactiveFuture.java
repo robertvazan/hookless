@@ -216,7 +216,7 @@ public class ReactiveFuture<T> {
 		return future;
 	}
 	public static <T> CompletableFuture<T> supplyReactive(Supplier<T> supplier) {
-		return supplyReactive(supplier, ReactiveExecutor.instance());
+		return supplyReactive(supplier, ReactiveExecutor.common());
 	}
 	public static CompletableFuture<Void> runReactive(Runnable runnable, Executor executor) {
 		Objects.requireNonNull(runnable);
@@ -226,6 +226,6 @@ public class ReactiveFuture<T> {
 		}, executor);
 	}
 	public static CompletableFuture<Void> runReactive(Runnable runnable) {
-		return runReactive(runnable, ReactiveExecutor.instance());
+		return runReactive(runnable, ReactiveExecutor.common());
 	}
 }

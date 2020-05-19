@@ -94,7 +94,7 @@ public class ReactiveThread {
 	 * Since reactive thread is not really a thread but rather a fiber, it needs an actual thread to run on.
 	 * We allow configuration of executor, so that heavy reactive threads can be kept off the main reactive executor.
 	 */
-	private Executor executor = ReactiveExecutor.instance();
+	private Executor executor = ReactiveExecutor.common();
 	public synchronized ReactiveThread executor(Executor executor) {
 		Objects.requireNonNull(executor);
 		ensureNotStarted();
