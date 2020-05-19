@@ -1,9 +1,9 @@
 // Part of Hookless: https://hookless.machinezoo.com
-package com.machinezoo.hookless;
+package com.machinezoo.hookless.util;
 
 import java.util.*;
 import java.util.concurrent.*;
-import com.machinezoo.hookless.util.*;
+import com.machinezoo.hookless.*;
 
 /*
  * We don't want to expose an ocean of new classes wrapping every kind of collection.
