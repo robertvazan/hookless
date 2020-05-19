@@ -7,7 +7,7 @@ import java.util.concurrent.*;
 import java.util.function.*;
 import com.google.common.util.concurrent.*;
 import com.machinezoo.hookless.time.*;
-import com.machinezoo.hookless.utils.*;
+import com.machinezoo.hookless.util.*;
 
 /*
  * Reactive wrapper around CompletableFuture.

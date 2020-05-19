@@ -5,7 +5,7 @@ import static java.util.stream.Collectors.*;
 import java.io.*;
 import java.util.*;
 import java.util.function.*;
-import com.machinezoo.hookless.utils.*;
+import com.machinezoo.hookless.util.*;
 import it.unimi.dsi.fastutil.objects.*;
 
 /*

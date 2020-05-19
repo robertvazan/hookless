@@ -4,7 +4,7 @@ package com.machinezoo.hookless;
 import java.util.*;
 import java.util.concurrent.*;
 import org.slf4j.*;
-import com.machinezoo.hookless.utils.*;
+import com.machinezoo.hookless.util.*;
 import com.machinezoo.noexception.*;
 import io.opentracing.*;
 import io.opentracing.util.*;

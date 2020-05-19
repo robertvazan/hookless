@@ -3,7 +3,7 @@ package com.machinezoo.hookless;
 
 import java.util.*;
 import java.util.function.*;
-import com.machinezoo.hookless.utils.*;
+import com.machinezoo.hookless.util.*;
 
 /*
  * Reactive computations sometimes need to control other reactive computations.

@@ -4,7 +4,7 @@ package com.machinezoo.hookless.time;
 import java.time.*;
 import java.util.concurrent.*;
 import com.machinezoo.hookless.*;
-import com.machinezoo.hookless.utils.*;
+import com.machinezoo.hookless.util.*;
 
 class ReactiveClock implements Comparable<Instant> {
 	private final Instant now = Instant.now();

@@ -4,7 +4,7 @@ package com.machinezoo.hookless;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
-import com.machinezoo.hookless.utils.*;
+import com.machinezoo.hookless.util.*;
 
 /*
  * Reactive computation graph needs intermediate nodes that are both consumers and sources of reactivity.

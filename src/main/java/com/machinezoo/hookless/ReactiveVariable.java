@@ -3,7 +3,7 @@ package com.machinezoo.hookless;
 
 import java.util.*;
 import java.util.concurrent.*;
-import com.machinezoo.hookless.utils.*;
+import com.machinezoo.hookless.util.*;
 import io.opentracing.*;
 import io.opentracing.util.*;
 

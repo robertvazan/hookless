@@ -3,7 +3,7 @@ package com.machinezoo.hookless;
 
 import java.util.*;
 import java.util.concurrent.*;
-import com.machinezoo.hookless.utils.*;
+import com.machinezoo.hookless.util.*;
 
 /*
  * We don't want to expose an ocean of new classes wrapping every kind of collection.
