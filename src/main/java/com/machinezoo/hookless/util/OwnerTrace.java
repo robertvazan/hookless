@@ -120,6 +120,9 @@ public class OwnerTrace<T> {
 	}
 	public OwnerTrace<T> tag(String key, Object value) {
 		Objects.requireNonNull(key);
+		/*
+		 * Silently ignore null tag values. This simplifies code that would otherwise have to perform null check.
+		 */
 		if (value != null) {
 			OwnerTag head = data.tags;
 			for (OwnerTag tag = head; tag != null; tag = tag.next) {
@@ -162,6 +165,7 @@ public class OwnerTrace<T> {
 	 * In the future, we might wish to be able to disable tracing in all or part of hookless code for performance reasons.
 	 */
 	public Span fill(Span span) {
+		Objects.requireNonNull(span);
 		fill(data, span, false);
 		/*
 		 * If there are tag conflicts among ancestors, we can either prefer higher or lower ancestors.

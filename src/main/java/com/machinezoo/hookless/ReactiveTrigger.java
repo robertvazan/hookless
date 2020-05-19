@@ -56,6 +56,7 @@ public class ReactiveTrigger implements AutoCloseable {
 		return armed;
 	}
 	public void arm(Iterable<ReactiveVariable<?>.Version> versions) {
+		Objects.requireNonNull(versions);
 		synchronized (this) {
 			/*
 			 * Contrary to fire() and close() calls, we put some constraints on when arm() can be called,

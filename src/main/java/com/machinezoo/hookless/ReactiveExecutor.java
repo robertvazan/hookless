@@ -1,5 +1,6 @@
 package com.machinezoo.hookless;
 
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import io.micrometer.core.instrument.*;
@@ -108,6 +109,7 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 	 */
 	private static final int MAX_DEPTH = 30;
 	@Override public void execute(Runnable runnable) {
+		Objects.requireNonNull(runnable);
 		ReactiveTask current = running.get();
 		/*
 		 * We will check whether the current task belongs to this executor, because every executor has separate event counter.

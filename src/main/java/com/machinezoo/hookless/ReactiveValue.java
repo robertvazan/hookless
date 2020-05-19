@@ -101,7 +101,7 @@ public class ReactiveValue<T> {
 	 * This method does as much equality checking as possible without running any expensive operations.
 	 */
 	public boolean same(ReactiveValue<?> other) {
-		return result == other.result && exception == other.exception && blocking == other.blocking;
+		return other != null && result == other.result && exception == other.exception && blocking == other.blocking;
 	}
 	/*
 	 * There are more efficient ways to compare exceptions, but this crude solution will work for now.

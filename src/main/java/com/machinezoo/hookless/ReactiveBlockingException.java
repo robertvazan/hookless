@@ -18,16 +18,16 @@ package com.machinezoo.hookless;
  */
 public class ReactiveBlockingException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
-	public ReactiveBlockingException() {
-		super("Reactive computation is blocked.");
-	}
-	public ReactiveBlockingException(Throwable cause) {
-		super("Reactive computation is blocked.", cause);
+	public ReactiveBlockingException(String message, Throwable cause) {
+		super(message != null ? message : "Reactive computation is blocked.", cause);
 	}
 	public ReactiveBlockingException(String message) {
-		super(message);
+		this(message, null);
 	}
-	public ReactiveBlockingException(String message, Throwable cause) {
-		super(message, cause);
+	public ReactiveBlockingException(Throwable cause) {
+		super(null, cause);
+	}
+	public ReactiveBlockingException() {
+		this(null, null);
 	}
 }

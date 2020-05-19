@@ -148,6 +148,7 @@ public class ReactiveScope {
 	 * but that one is a tiny bit smaller, because it cannot assume the supplied version is the latest one.
 	 */
 	public void watch(ReactiveVariable<?> variable) {
+		Objects.requireNonNull(variable);
 		if (!dependencies.containsKey(variable))
 			dependencies.put(variable, variable.version());
 	}
@@ -161,6 +162,7 @@ public class ReactiveScope {
 	 * so we are satisfied with an API that lets callers rebuild the scope with some dependencies modified or filtered out.
 	 */
 	public void watch(ReactiveVariable<?> variable, long version) {
+		Objects.requireNonNull(variable);
 		long previous = dependencies.getLong(variable);
 		if (previous == 0 || version < previous)
 			dependencies.put(variable, version);
