@@ -146,4 +146,7 @@ public class ReactiveStateMachine<T> {
 			valid.set(false);
 		}
 	}
+	@Override public String toString() {
+		return OwnerTrace.of(this) + " = " + output.value();
+	}
 }

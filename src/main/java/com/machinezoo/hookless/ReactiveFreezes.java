@@ -81,4 +81,7 @@ public class ReactiveFreezes {
 		} else if (map != null)
 			map.remove(key);
 	}
+	@Override public String toString() {
+		return getClass().getSimpleName() + ": " + (map != null ? map.toString() : "(empty)");
+	}
 }

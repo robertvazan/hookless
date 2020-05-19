@@ -139,4 +139,7 @@ public class ReactivePins {
 		 */
 		valid = false;
 	}
+	@Override public String toString() {
+		return getClass().getSimpleName() + ": " + (map != null ? map.toString() : "(empty)");
+	}
 }

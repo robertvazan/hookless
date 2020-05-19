@@ -275,6 +275,9 @@ public class ReactiveCollections {
 		ReactiveIterator(ReactiveCollectionObject master, Iterator<T> inner) {
 			super(master);
 			this.inner = inner;
+			OwnerTrace.of(this)
+				.alias("iterator")
+				.parent(master);
 		}
 		@Override public boolean hasNext() {
 			observe();
@@ -283,6 +286,10 @@ public class ReactiveCollections {
 		@Override public T next() {
 			observe();
 			return inner.next();
+		}
+		@Override public String toString() {
+			observe();
+			return OwnerTrace.of(this) + ": " + inner.toString();
 		}
 	}
 	public static <T> Collection<T> collection(Collection<T> collection, Options options) {
@@ -302,7 +309,9 @@ public class ReactiveCollections {
 		}
 		ReactiveCollection(Collection<T> inner, ReactiveCollectionObject master) {
 			super(master);
-			OwnerTrace.of(this).alias("collection");
+			OwnerTrace.of(this)
+				.alias("collection")
+				.parent(master);
 			this.inner = inner;
 		}
 		@Override public boolean add(T item) {
@@ -405,7 +414,9 @@ public class ReactiveCollections {
 		}
 		ReactiveItemCollection(Collection<T> inner, ReactiveItemObject master) {
 			super(master);
-			OwnerTrace.of(this).alias("collection");
+			OwnerTrace.of(this)
+				.alias("collection")
+				.parent(master);
 			this.inner = inner;
 		}
 		@Override public boolean add(T item) {
@@ -504,6 +515,9 @@ public class ReactiveCollections {
 		ReactiveListIterator(ReactiveCollectionObject master, ListIterator<T> inner) {
 			super(master, inner);
 			this.inner = inner;
+			OwnerTrace.of(this)
+				.alias("iterator")
+				.parent(master);
 		}
 		@Override public void add(T e) {
 			Objects.requireNonNull(e);
@@ -545,6 +559,10 @@ public class ReactiveCollections {
 			inner.set(e);
 			invalidate();
 		}
+		@Override public String toString() {
+			observe();
+			return OwnerTrace.of(this) + ": " + inner;
+		}
 	}
 	public static <T> List<T> list(List<T> list, Options options) {
 		Objects.requireNonNull(list);
@@ -563,7 +581,9 @@ public class ReactiveCollections {
 		}
 		ReactiveList(List<T> inner, ReactiveCollectionObject master) {
 			super(inner, master);
-			OwnerTrace.of(this).alias("list");
+			OwnerTrace.of(this)
+				.alias("list")
+				.parent(master);
 			this.inner = inner;
 		}
 		@Override public boolean add(T item) {
@@ -659,6 +679,10 @@ public class ReactiveCollections {
 				throw silenceException(ex);
 			}
 		}
+		@Override public String toString() {
+			observe();
+			return OwnerTrace.of(this) + ": " + inner;
+		}
 	}
 	public static <T> Set<T> set(Set<T> set, Options options) {
 		Objects.requireNonNull(set);
@@ -680,7 +704,9 @@ public class ReactiveCollections {
 		}
 		ReactiveSet(Set<T> inner, ReactiveCollectionObject master) {
 			super(inner, master);
-			OwnerTrace.of(this).alias("set");
+			OwnerTrace.of(this)
+				.alias("set")
+				.parent(master);
 			this.inner = inner;
 		}
 		@Override public boolean add(T item) {
@@ -698,6 +724,10 @@ public class ReactiveCollections {
 			invalidateIf(changed);
 			return silenceStatus(changed);
 		}
+		@Override public String toString() {
+			observe();
+			return OwnerTrace.of(this) + ": " + inner;
+		}
 	}
 	private static class ReactiveItemSet<T> extends ReactiveItemCollection<T> implements Set<T> {
 		final Set<T> inner;
@@ -708,7 +738,9 @@ public class ReactiveCollections {
 		}
 		ReactiveItemSet(Set<T> inner, ReactiveItemObject master) {
 			super(inner, master);
-			OwnerTrace.of(this).alias("set");
+			OwnerTrace.of(this)
+				.alias("set")
+				.parent(master);
 			this.inner = inner;
 		}
 		@Override public boolean add(T item) {
@@ -725,6 +757,10 @@ public class ReactiveCollections {
 			boolean changed = inner.addAll(collection);
 			invalidateIf(collection, changed);
 			return silenceStatus(changed);
+		}
+		@Override public String toString() {
+			observe();
+			return OwnerTrace.of(this) + ": " + inner;
 		}
 	}
 	public static <K, V> Map<K, V> map(Map<K, V> map, Options options) {
@@ -943,6 +979,10 @@ public class ReactiveCollections {
 			 */
 			invalidate();
 			return item;
+		}
+		@Override public String toString() {
+			observe();
+			return OwnerTrace.of(this) + ": " + inner;
 		}
 	}
 }
