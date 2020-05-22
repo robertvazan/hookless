@@ -26,16 +26,15 @@ public class ReactivePins {
 	@SuppressWarnings("unchecked") public <T> T pin(Object key, Supplier<T> supplier) {
 		Objects.requireNonNull(key);
 		Objects.requireNonNull(supplier);
-		for (ReactivePins ancestor = parent; ancestor != null; ancestor = ancestor.parent)
-			if (ancestor.map != null && ancestor.map.containsKey(key))
-				return ((ReactiveValue<T>)ancestor.map.get(key)).get();
+		for (ReactivePins ancestor = this; ancestor != null; ancestor = ancestor.parent) {
+			if (ancestor.map != null) {
+				ReactiveValue<?> stored = ancestor.map.get(key);
+				if (stored != null)
+					return ((ReactiveValue<T>)stored).get();
+			}
+		}
 		if (map == null)
 			map = new HashMap<>();
-		else {
-			ReactiveValue<?> stored = map.get(key);
-			if (stored != null)
-				return ((ReactiveValue<T>)stored).get();
-		}
 		ReactiveValue<T> captured = ReactiveValue.capture(supplier);
 		/*
 		 * If the computation inside the supplier blocks, there's no point in creating a pin for it.

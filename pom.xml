@@ -76,6 +76,12 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.hamcrest</groupId>
+			<artifactId>hamcrest</artifactId>
+			<version>2.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>uk.org.lidalia</groupId>
 			<artifactId>slf4j-test</artifactId>
 			<version>1.2.0</version>

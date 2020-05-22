@@ -41,16 +41,15 @@ public class ReactiveFreezes {
 	@SuppressWarnings("unchecked") public <T> T freeze(Object key, Supplier<T> supplier) {
 		Objects.requireNonNull(key);
 		Objects.requireNonNull(supplier);
-		for (ReactiveFreezes ancestor = parent; ancestor != null; ancestor = ancestor.parent)
-			if (ancestor.map != null && ancestor.map.containsKey(key))
-				return ((ReactiveValue<T>)ancestor.map.get(key)).get();
+		for (ReactiveFreezes ancestor = this; ancestor != null; ancestor = ancestor.parent) {
+			if (ancestor.map != null) {
+				ReactiveValue<?> stored = ancestor.map.get(key);
+				if (stored != null)
+					return ((ReactiveValue<T>)stored).get();
+			}
+		}
 		if (map == null)
 			map = new HashMap<>();
-		else {
-			ReactiveValue<?> stored = map.get(key);
-			if (stored != null)
-				return ((ReactiveValue<T>)stored).get();
-		}
 		ReactiveValue<T> captured = ReactiveValue.capture(supplier);
 		map.put(key, captured);
 		return captured.get();
