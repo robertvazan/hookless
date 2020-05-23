@@ -71,7 +71,7 @@ public class ReactiveScopeTest {
 				assertEquals("world", v2.get());
 			}
 		}
-		Iterator<ReactiveVariable<?>.Version> it = s.versions().iterator();
+		Iterator<ReactiveVariable.Version> it = s.versions().iterator();
 		assertSame(v1, it.next().variable());
 		assertFalse(it.hasNext());
 	}

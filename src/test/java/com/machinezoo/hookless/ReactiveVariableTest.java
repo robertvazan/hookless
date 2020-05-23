@@ -34,7 +34,7 @@ public class ReactiveVariableTest {
 		AtomicInteger counter = new AtomicInteger(0);
 		try (ReactiveTrigger trigger = new ReactiveTrigger()) {
 			trigger.callback(counter::incrementAndGet);
-			trigger.arm(Arrays.asList(v.new Version()));
+			trigger.arm(Arrays.asList(new ReactiveVariable.Version(v)));
 			assertEquals(0, counter.get());
 			v.set("hi");
 			assertEquals(1, counter.get());

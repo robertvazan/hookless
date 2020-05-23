@@ -12,7 +12,7 @@ public class ReactiveTriggerTest {
 		AtomicInteger n = new AtomicInteger(0);
 		try (ReactiveTrigger t = new ReactiveTrigger()) {
 			t.callback(n::incrementAndGet);
-			t.arm(Arrays.asList(v.new Version()));
+			t.arm(Arrays.asList(new ReactiveVariable.Version(v)));
 			assertEquals(0, n.get());
 			v.set("hi");
 			assertEquals(1, n.get());
@@ -22,7 +22,7 @@ public class ReactiveTriggerTest {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		try (ReactiveTrigger t = new ReactiveTrigger()) {
 			assertFalse(t.armed());
-			t.arm(Arrays.asList(v.new Version()));
+			t.arm(Arrays.asList(new ReactiveVariable.Version(v)));
 			assertTrue(t.armed());
 			assertFalse(t.fired());
 			v.set("hi");
@@ -37,7 +37,7 @@ public class ReactiveTriggerTest {
 		ReactiveVariable<String> v2 = new ReactiveVariable<>("b");
 		ReactiveVariable<String> v3 = new ReactiveVariable<>("c");
 		try (ReactiveTrigger t = new ReactiveTrigger()) {
-			t.arm(Arrays.asList(v1.new Version(), v2.new Version(), v3.new Version()));
+			t.arm(Arrays.asList(new ReactiveVariable.Version(v1), new ReactiveVariable.Version(v2), new ReactiveVariable.Version(v3)));
 			assertFalse(t.fired());
 			v2.set("hi");
 			assertTrue(t.fired());
@@ -48,7 +48,7 @@ public class ReactiveTriggerTest {
 		AtomicInteger n = new AtomicInteger(0);
 		try (ReactiveTrigger t = new ReactiveTrigger()) {
 			t.callback(n::incrementAndGet);
-			t.arm(Arrays.asList(v.new Version(v.version() - 1)));
+			t.arm(Arrays.asList(new ReactiveVariable.Version(v, v.version() - 1)));
 			assertTrue(t.fired());
 			assertEquals(1, n.get());
 		}
@@ -56,7 +56,7 @@ public class ReactiveTriggerTest {
 	@Test public void tolerateDoubleFireAndClose() {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		try (ReactiveTrigger t = new ReactiveTrigger()) {
-			t.arm(Arrays.asList(v.new Version()));
+			t.arm(Arrays.asList(new ReactiveVariable.Version(v)));
 			t.fire();
 			t.fire();
 			t.close();
@@ -75,7 +75,7 @@ public class ReactiveTriggerTest {
 			assertTrue(t.closed());
 		}
 		try (ReactiveTrigger t = new ReactiveTrigger()) {
-			t.arm(Arrays.asList(v.new Version()));
+			t.arm(Arrays.asList(new ReactiveVariable.Version(v)));
 			t.close();
 			assertTrue(t.closed());
 		}

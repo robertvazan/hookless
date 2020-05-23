@@ -55,7 +55,7 @@ public class ReactiveTrigger implements AutoCloseable {
 	public synchronized boolean armed() {
 		return armed;
 	}
-	public void arm(Iterable<ReactiveVariable<?>.Version> versions) {
+	public void arm(Iterable<ReactiveVariable.Version> versions) {
 		Objects.requireNonNull(versions);
 		synchronized (this) {
 			/*
@@ -72,7 +72,7 @@ public class ReactiveTrigger implements AutoCloseable {
 		 * Subscription runs unsynchronized, because it could take some time and we might need to fire() during it.
 		 */
 		List<ReactiveVariable<?>> subscribed = new ArrayList<>();
-		for (ReactiveVariable<?>.Version version : versions) {
+		for (ReactiveVariable.Version version : versions) {
 			version.variable().subscribe(this);
 			subscribed.add(version.variable());
 			/*

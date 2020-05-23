@@ -114,7 +114,7 @@ public class ReactiveScope {
 	 * Efficiency is not that important. We can provide ReactiveTrigger with direct access if needed.
 	 * We most importantly care about clean API here.
 	 */
-	public Iterable<ReactiveVariable<?>.Version> versions() {
+	public Iterable<ReactiveVariable.Version> versions() {
 		/*
 		 * If there are invalidated pins from previous blocking computations,
 		 * we have to assume that our version list is incomplete, because pin dependencies have not been preserved.
@@ -125,14 +125,15 @@ public class ReactiveScope {
 		 * If we invalidated blocking computations too, it would result in busy looping since the pins wouldn't get updated by more computations.
 		 * Blocking computations only need to wait for completion of their blocking reads in order to make progress.
 		 */
-		if (!blocked && pins != null && !pins.valid())
-			return Collections.singletonList(invalidated.new Version(invalidated.version() - 1));
+		if (!blocked && pins != null && !pins.valid()) {
+			return Collections.singletonList(new ReactiveVariable.Version(invalidated, invalidated.version() - 1));
+		}
 		/*
 		 * This is quite inefficient, but the API allows for very high efficiency.
 		 * We could have a custom iterator, perhaps even one recycling objects.
 		 */
 		return dependencies.object2LongEntrySet().stream()
-			.map(e -> e.getKey().new Version(e.getLongValue()))
+			.map(e -> new ReactiveVariable.Version(e.getKey(), e.getLongValue()))
 			.collect(toList());
 	}
 	private static ReactiveVariable<Object> invalidated = new ReactiveVariable<>();
@@ -252,7 +253,7 @@ public class ReactiveScope {
 				 * If it was blocked, then checking of pin invalidation is disabled and versions() behaves normally.
 				 * All that means we can safely query versions() of the nested scope here and assume standard behavior.
 				 */
-				for (ReactiveVariable<?>.Version version : scope.versions())
+				for (ReactiveVariable.Version version : scope.versions())
 					parent.watch(version.variable(), version.number());
 			}
 		}

@@ -61,19 +61,21 @@ public class ReactiveVariable<T> {
 	 * The object representation of version is nevertheless still needed in various APIs.
 	 * We will provide an inner class that represents either latest or any specified version.
 	 */
-	public class Version {
+	public static class Version {
+		private final ReactiveVariable<?> variable;
 		public ReactiveVariable<?> variable() {
-			return ReactiveVariable.this;
+			return variable;
 		}
 		private final long number;
 		public long number() {
 			return number;
 		}
-		public Version() {
-			number = ReactiveVariable.this.version;
-		}
-		public Version(long version) {
+		public Version(ReactiveVariable<?> variable, long version) {
+			this.variable = variable;
 			number = version;
+		}
+		public Version(ReactiveVariable<?> variable) {
+			this(variable, variable.version);
 		}
 		/*
 		 * Make version objects directly comparable.
@@ -81,16 +83,16 @@ public class ReactiveVariable<T> {
 		@Override public boolean equals(Object obj) {
 			if (this == obj)
 				return true;
-			if (obj == null || !(obj instanceof ReactiveVariable.Version))
+			if (obj == null || !(obj instanceof Version))
 				return false;
-			@SuppressWarnings("unchecked") Version other = (Version)obj;
+			Version other = (Version)obj;
 			return variable() == other.variable() && number == other.number;
 		}
 		@Override public int hashCode() {
 			return Objects.hash(variable(), number);
 		}
 		@Override public String toString() {
-			return "Version " + number + " of " + ReactiveVariable.this;
+			return "Version " + number + " of " + variable;
 		}
 	}
 	/*
