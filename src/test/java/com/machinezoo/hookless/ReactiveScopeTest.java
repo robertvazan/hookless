@@ -1,6 +1,9 @@
 // Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless;
 
+import static java.util.stream.Collectors.*;
+import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;
 import org.junit.jupiter.api.*;
@@ -12,7 +15,7 @@ public class ReactiveScopeTest {
 		try (ReactiveScope.Computation c = s.enter()) {
 			assertEquals("hello", v.get());
 		}
-		assertSame(v, s.versions().iterator().next().variable());
+		assertThat(s.versions().stream().map(x -> x.variable()).collect(toList()), contains(v));
 	}
 	@Test public void nest() {
 		ReactiveVariable<String> v1 = new ReactiveVariable<>("hello");
@@ -25,8 +28,8 @@ public class ReactiveScopeTest {
 				assertEquals("world", v2.get());
 			}
 		}
-		assertSame(v1, s1.versions().iterator().next().variable());
-		assertSame(v2, s2.versions().iterator().next().variable());
+		assertThat(s1.versions().stream().map(v -> v.variable()).collect(toList()), contains(v1));
+		assertThat(s2.versions().stream().map(v -> v.variable()).collect(toList()), contains(v2));
 	}
 	@Test public void current() {
 		assertNull(ReactiveScope.current());
@@ -44,7 +47,7 @@ public class ReactiveScopeTest {
 			v.set("world");
 			assertEquals("world", v.get());
 		}
-		assertEquals(v.version() - 1, s.versions().iterator().next().number());
+		assertEquals(v.version() - 1, s.versions().stream().findFirst().get().number());
 	}
 	@Test public void pickEarlierVersion() {
 		// create a variable with lots of versions
@@ -59,7 +62,7 @@ public class ReactiveScopeTest {
 			s.watch(v, 4);
 		}
 		// earliest version is kept
-		assertEquals(2, s.versions().iterator().next().number());
+		assertEquals(2, s.versions().stream().findFirst().get().number());
 	}
 	@Test public void ignore() {
 		ReactiveVariable<String> v1 = new ReactiveVariable<>("hello");
@@ -71,9 +74,7 @@ public class ReactiveScopeTest {
 				assertEquals("world", v2.get());
 			}
 		}
-		Iterator<ReactiveVariable.Version> it = s.versions().iterator();
-		assertSame(v1, it.next().variable());
-		assertFalse(it.hasNext());
+		assertThat(s.versions().stream().map(v -> v.variable()).collect(toList()), contains(v1));
 	}
 	@Test public void block() {
 		ReactiveScope s = new ReactiveScope();

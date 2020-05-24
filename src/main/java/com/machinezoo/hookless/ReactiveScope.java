@@ -114,7 +114,7 @@ public class ReactiveScope {
 	 * Efficiency is not that important. We can provide ReactiveTrigger with direct access if needed.
 	 * We most importantly care about clean API here.
 	 */
-	public Iterable<ReactiveVariable.Version> versions() {
+	public Collection<ReactiveVariable.Version> versions() {
 		/*
 		 * If there are invalidated pins from previous blocking computations,
 		 * we have to assume that our version list is incomplete, because pin dependencies have not been preserved.
@@ -129,12 +129,12 @@ public class ReactiveScope {
 			return Collections.singletonList(new ReactiveVariable.Version(invalidated, invalidated.version() - 1));
 		}
 		/*
-		 * This is quite inefficient, but the API allows for very high efficiency.
-		 * We could have a custom iterator, perhaps even one recycling objects.
+		 * This is quite inefficient, but the API allows for very high efficiency. We could have a custom collection.
 		 */
-		return dependencies.object2LongEntrySet().stream()
+		List<ReactiveVariable.Version> versions = dependencies.object2LongEntrySet().stream()
 			.map(e -> new ReactiveVariable.Version(e.getKey(), e.getLongValue()))
 			.collect(toList());
+		return Collections.unmodifiableCollection(versions);
 	}
 	private static ReactiveVariable<Object> invalidated = new ReactiveVariable<>();
 	static {

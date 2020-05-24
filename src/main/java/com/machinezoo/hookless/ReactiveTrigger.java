@@ -55,7 +55,7 @@ public class ReactiveTrigger implements AutoCloseable {
 	public synchronized boolean armed() {
 		return armed;
 	}
-	public void arm(Iterable<ReactiveVariable.Version> versions) {
+	public void arm(Collection<ReactiveVariable.Version> versions) {
 		Objects.requireNonNull(versions);
 		synchronized (this) {
 			/*

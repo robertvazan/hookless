@@ -57,7 +57,7 @@ public class ReactiveVariableTest {
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			assertEquals("hello", v.get());
 			// Variable access has been observed.
-			assertSame(v, c.scope().versions().iterator().next().variable());
+			assertSame(v, c.scope().versions().stream().findFirst().get().variable());
 		}
 	}
 	@Test public void storeReactiveValue() {
@@ -87,7 +87,7 @@ public class ReactiveVariableTest {
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			ReactiveVariable<String> v = new ReactiveVariable<>("value");
 			assertEquals(new ReactiveValue<>("value"), v.value());
-			assertSame(v, c.scope().versions().iterator().next().variable());
+			assertSame(v, c.scope().versions().stream().findFirst().get().variable());
 		}
 	}
 	@Test public void deduplicateWrites() {
