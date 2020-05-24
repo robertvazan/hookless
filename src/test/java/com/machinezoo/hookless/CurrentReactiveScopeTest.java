@@ -5,56 +5,45 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.*;
 
 public class CurrentReactiveScopeTest {
-	@Test public void propagateBlocking() {
-		ReactiveScope s = new ReactiveScope();
-		try (ReactiveScope.Computation c = s.enter()) {
+	@Test public void block() {
+		// Propagate blocking to the current scope.
+		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			CurrentReactiveScope.block();
+			assertTrue(c.scope().blocked());
 		}
-		assertTrue(s.blocked());
-	}
-	@Test public void ignoreBlocking() {
-		// no exception
+		// No effect and no exception outside of any scope.
 		CurrentReactiveScope.block();
 	}
-	@Test public void testBlocked() {
-		ReactiveScope s = new ReactiveScope();
-		try (ReactiveScope.Computation c = s.enter()) {
+	@Test public void blocked() {
+		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+			// Read blocking state from the current scope.
 			assertFalse(CurrentReactiveScope.blocked());
 			CurrentReactiveScope.block();
 			assertTrue(CurrentReactiveScope.blocked());
 		}
-	}
-	@Test public void fallbackBlocked() {
+		// Default to false outside of any scope.
 		assertFalse(CurrentReactiveScope.blocked());
 	}
-	@Test public void propagateFreeze() {
-		ReactiveScope s = new ReactiveScope();
-		String frozen;
-		try (ReactiveScope.Computation c = s.enter()) {
-			// use String constructor to ensure we get a new instance each time
-			frozen = CurrentReactiveScope.freeze("key", () -> new String("value"));
-			assertSame(frozen, CurrentReactiveScope.freeze("key", () -> new String("value")));
+	@Test public void freeze() {
+		// Propagate freeze() call to the current scope.
+		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+			assertEquals("value", CurrentReactiveScope.freeze("key", () -> "value"));
+			assertEquals("value", CurrentReactiveScope.freeze("key", () -> "other"));
+			assertEquals(new ReactiveValue<>("value"), c.scope().freezes().get("key"));
 		}
-		assertSame(frozen, s.freezes().get("key").result());
+		// Re-evaluate the Supplier each time outside of any reactive scope.
+		assertEquals("one", CurrentReactiveScope.freeze("key", () -> "one"));
+		assertEquals("two", CurrentReactiveScope.freeze("key", () -> "two"));
 	}
-	@Test public void fallbackFreeze() {
-		String fallback = CurrentReactiveScope.freeze("key", () -> new String("value"));
-		assertEquals("value", fallback);
-		assertNotSame(fallback, CurrentReactiveScope.freeze("key", () -> new String("value")));
-	}
-	@Test public void propagatePin() {
-		ReactiveScope s = new ReactiveScope();
-		String pinned;
-		try (ReactiveScope.Computation c = s.enter()) {
-			// use String constructor to ensure we get a new instance each time
-			pinned = CurrentReactiveScope.pin("key", () -> new String("value"));
-			assertSame(pinned, CurrentReactiveScope.pin("key", () -> new String("value")));
+	@Test public void pin() {
+		// Propagate pin() call to the current scope.
+		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+			assertEquals("value", CurrentReactiveScope.pin("key", () -> "value"));
+			assertEquals("value", CurrentReactiveScope.pin("key", () -> "other"));
+			assertEquals(new ReactiveValue<>("value"), c.scope().pins().get("key"));
 		}
-		assertSame(pinned, s.pins().get("key").get());
-	}
-	@Test public void fallbackPin() {
-		String fallback = CurrentReactiveScope.pin("key", () -> new String("value"));
-		assertEquals("value", fallback);
-		assertNotSame(fallback, CurrentReactiveScope.pin("key", () -> new String("value")));
+		// Re-evaluate the Supplier each time outside of any reactive scope.
+		assertEquals("one", CurrentReactiveScope.pin("key", () -> "one"));
+		assertEquals("two", CurrentReactiveScope.pin("key", () -> "two"));
 	}
 }
