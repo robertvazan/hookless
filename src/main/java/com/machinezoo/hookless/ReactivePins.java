@@ -66,6 +66,11 @@ public class ReactivePins {
 	public void set(Object key, ReactiveValue<?> value) {
 		Objects.requireNonNull(key);
 		if (value != null) {
+			/*
+			 * Pins cannot capture blocking. It only makes sense that blocking value cannot be explicitly set.
+			 */
+			if (value.blocking())
+				throw new IllegalArgumentException();
 			if (map == null)
 				map = new HashMap<>();
 			map.put(key, value);

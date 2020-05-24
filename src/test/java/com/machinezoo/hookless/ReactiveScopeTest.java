@@ -127,17 +127,27 @@ public class ReactiveScopeTest {
 	}
 	@Test public void pin() {
 		ReactiveScope s1 = new ReactiveScope();
-		String pinned;
-		try (ReactiveScope.Computation c1 = s1.enter()) {
-			// use String constructor to ensure we get a new instance each time
-			pinned = CurrentReactiveScope.pin("key", () -> new String("value"));
+		try (ReactiveScope.Computation c = s1.enter()) {
+			// Within single scope, pins behave like freezes.
+			assertEquals("value", CurrentReactiveScope.pin("key", () -> "value"));
+			assertEquals("value", CurrentReactiveScope.pin("key", () -> "other"));
 		}
-		// transfer the draft to the next scope
+		// After pinning in one scope, we can retrieve the pin in another scope sharing the same pins.
 		ReactiveScope s2 = new ReactiveScope();
 		s2.pins(s1.pins());
-		// expect to get the same object back
-		try (ReactiveScope.Computation c1 = s2.enter()) {
-			assertSame(pinned, CurrentReactiveScope.pin("key", () -> new String("value")));
+		try (ReactiveScope.Computation c = s2.enter()) {
+			assertEquals("value", CurrentReactiveScope.pin("key", () -> "other"));
+			// Pins remain valid until invalidated by blocking.
+			assertTrue(s2.pins().valid());
+			s2.block();
+			assertFalse(s2.pins().valid());
+			// Once the computation is blocked, pins are not stored, but previously created pins are unaffected.
+			assertEquals("value", CurrentReactiveScope.pin("key", () -> "other"));
+			assertEquals("hello", CurrentReactiveScope.pin("alt", () -> "hello"));
+			assertThat(s2.pins().keys(), contains("key"));
+			// The pins are however downgraded to freezes and thus stable throughout the current computation.
+			assertThat(s2.freezes().keys(), containsInAnyOrder("key", "alt"));
+			assertEquals("hello", CurrentReactiveScope.pin("alt", () -> "hi"));
 		}
 	}
 }

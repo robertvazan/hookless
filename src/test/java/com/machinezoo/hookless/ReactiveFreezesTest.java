@@ -45,30 +45,30 @@ public class ReactiveFreezesTest {
 	}
 	// Frozen ReactiveValue of course includes the blocking flag.
 	@Test public void captureBlocking() {
-		try (ReactiveScope.Computation computation = new ReactiveScope().enter()) {
-			f.freeze("key", () -> {
+		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+			assertEquals("value", f.freeze("key", () -> {
 				CurrentReactiveScope.block();
-				return "Value";
-			});
-			assertTrue(computation.scope().blocked());
+				return "value";
+			}));
+			assertTrue(c.scope().blocked());
 			assertTrue(f.get("key").blocking());
 		}
 	}
 	// If the frozen value is marked as blocking for whatever reason, the blocking flag is propagated into the current computation.
 	// This is a contrived example using explicit manipulation API. See below for a realistic example.
 	@Test public void propagateBlocking() {
-		try (ReactiveScope.Computation computation = new ReactiveScope().enter()) {
+		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			f.set("key", new ReactiveValue<>("value", true));
-			assertFalse(computation.scope().blocked());
+			assertFalse(c.scope().blocked());
 			f.freeze("key", () -> "other");
-			assertTrue(computation.scope().blocked());
+			assertTrue(c.scope().blocked());
 		}
 	}
 	// This is a realistic example of blocking flag propagation.
 	@Test public void blockingScenario() {
 		// Consider two nested scopes. The inner one is non-blocking. The two share one ReactiveFreezes object.
-		try (ReactiveScope.Computation outer = new ReactiveScope().enter()) {
-			try (ReactiveScope.Computation inner = ReactiveScope.nonblocking()) {
+		try (ReactiveScope.Computation c1 = new ReactiveScope().enter()) {
+			try (ReactiveScope.Computation c2 = ReactiveScope.nonblocking()) {
 				// Blocking freeze of course marks the inner scope as blocked.
 				assertEquals("value", CurrentReactiveScope.freeze("key", () -> {
 					CurrentReactiveScope.block();
