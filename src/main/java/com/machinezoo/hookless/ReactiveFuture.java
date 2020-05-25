@@ -99,12 +99,9 @@ public class ReactiveFuture<T> {
 		if (value.blocking()) {
 			/*
 			 * Propagate blocking just like in CompletableFuture.
-			 */
-			CurrentReactiveScope.block();
-			/*
 			 * We don't have any fallback value and it might not be correct to fallback to null, so just throw.
 			 */
-			throw new ReactiveBlockingException();
+			throw ReactiveBlockingException.block();
 		}
 		return unpack(value);
 	}
@@ -154,8 +151,7 @@ public class ReactiveFuture<T> {
 			/*
 			 * If timeout has not been reached yet, continue like in get().
 			 */
-			CurrentReactiveScope.block();
-			throw new ReactiveBlockingException();
+			throw ReactiveBlockingException.block();
 		}
 		return unpack(value);
 	}
