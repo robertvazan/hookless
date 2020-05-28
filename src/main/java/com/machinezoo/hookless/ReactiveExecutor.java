@@ -110,11 +110,23 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 			}
 		}
 	}
-	public ReactiveExecutor(int min, int max, long timeout, TimeUnit unit, ThreadFactory threads) {
-		super(min, max, timeout, unit, new PriorityBlockingQueue<>(), threads);
+	/*
+	 * Unbounded queue means that ThreadPoolExecutor can run only as a fixed-size thread pool.
+	 */
+	public ReactiveExecutor(int parallelism, ThreadFactory threads) {
+		/*
+		 * Leaving the queue unbounded involves only a small risk of memory exhaustion,
+		 * because reactive objects are designed to create at most one task at a time.
+		 * The only way we could exhaust memory here is if the reactive objects
+		 * are gargbage-collected faster than we can execute their callbacks.
+		 */
+		super(parallelism, parallelism, 0, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<>(), threads);
 	}
-	public ReactiveExecutor(int min, int max, long timeout, TimeUnit unit) {
-		this(min, max, timeout, unit, Executors.defaultThreadFactory());
+	public ReactiveExecutor(int parallelism) {
+		this(parallelism, Executors.defaultThreadFactory());
+	}
+	public ReactiveExecutor() {
+		this(Runtime.getRuntime().availableProcessors());
 	}
 	/*
 	 * We have to choose maximum cascading depth to prevent infinite cascades (busy-looping reactive code)
@@ -137,9 +149,8 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 	/*
 	 * We will define one common reactive executor that will be used as default in all reactive primitives that need an executor.
 	 * This executor will be compute-optimized with thread count equal to core count. Submitting blocking operations here will undermine performance.
-	 * Minimum thread count is zero, so that this thread pool consumes no resources when not in use.
 	 */
-	private static final ReactiveExecutor common = new ReactiveExecutor(0, Runtime.getRuntime().availableProcessors(), 1, TimeUnit.MINUTES, new ThreadFactory() {
+	private static final ReactiveExecutor common = new ReactiveExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
 		@Override public Thread newThread(Runnable runnable) {
 			Thread thread = new Thread(runnable);
 			/*
