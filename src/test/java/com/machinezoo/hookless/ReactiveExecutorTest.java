@@ -9,6 +9,7 @@ import java.time.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import org.junit.jupiter.api.*;
+import org.junitpioneer.jupiter.*;
 
 public class ReactiveExecutorTest extends TestBase {
 	ReactiveExecutor x;
@@ -79,10 +80,10 @@ public class ReactiveExecutorTest extends TestBase {
 		// But event count is much smaller, because queued tasks are aggregated in events.
 		assertThat(x.getEventCount(), lessThan(tc / 20L));
 	}
-	@Test public void parallelism() {
-		// Submit one second worth of 1ms tasks.
+	@RepeatFailedTest(3) public void parallelism() {
+		// Submit 300ms worth of 1ms tasks.
 		AtomicInteger n = new AtomicInteger();
-		int tc = 1000 * Runtime.getRuntime().availableProcessors();
+		int tc = 300 * Runtime.getRuntime().availableProcessors();
 		long t0 = System.nanoTime();
 		for (int i = 0; i < tc; ++i) {
 			x.execute(() -> {
@@ -91,8 +92,8 @@ public class ReactiveExecutorTest extends TestBase {
 			});
 		}
 		await().untilAtomic(n, equalTo(tc));
-		// Expect them to complete under two seconds, which proves they run in parallel.
-		assertThat(System.nanoTime() - t0, lessThan(2_000_000_000L));
+		// Expect them to complete in 150% of the minimum time, which proves they run in parallel.
+		assertThat(Duration.ofNanos(System.nanoTime() - t0).toMillis(), lessThan(450L));
 	}
 	// Simulation of cascading tasks, each taking 1ms.
 	private void cascade(int depth, Runnable then) {
@@ -102,7 +103,7 @@ public class ReactiveExecutorTest extends TestBase {
 		else
 			x.execute(() -> cascade(depth - 1, then));
 	}
-	@Test public void latency() throws Exception {
+	@RepeatFailedTest(3) public void latency() throws Exception {
 		// Start 30ms long task cascade. This coincides with executor's maximum cascade depth of 30.
 		AtomicReference<Duration> latency = new AtomicReference<>();
 		long t0 = System.nanoTime();
@@ -119,6 +120,6 @@ public class ReactiveExecutorTest extends TestBase {
 		await().untilAtomic(latency, notNullValue());
 		long ms = latency.get().toMillis();
 		assertThat(ms, greaterThan(30L));
-		assertThat(ms, lessThan(60L));
+		assertThat(ms, lessThan(45L));
 	}
 }
