@@ -82,6 +82,12 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.awaitility</groupId>
+			<artifactId>awaitility</artifactId>
+			<version>4.0.3</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>uk.org.lidalia</groupId>
 			<artifactId>slf4j-test</artifactId>
 			<version>1.2.0</version>
