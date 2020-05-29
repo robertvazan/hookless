@@ -6,5 +6,5 @@ Hookless is a [reactive programming](https://en.wikipedia.org/wiki/Reactive_prog
 * Download: see [Website](https://hookless.machinezoo.com/)
 * Sources: [GitHub](https://github.com/robertvazan/hookless), [Bitbucket](https://bitbucket.org/robertvazan/hookless)
 * Issues: [GitHub](https://github.com/robertvazan/hookless/issues), [Bitbucket](https://bitbucket.org/robertvazan/hookless/issues)
-* License: [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+* License: [Apache License 2.0](LICENSE)
 
