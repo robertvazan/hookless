@@ -155,6 +155,16 @@ public class ReactiveFuture<T> {
 		}
 		return unpack(value);
 	}
+	/*
+	 * Offer the TimeUnit-based API as well for compatibility with CompletableFuture.
+	 */
+	public T get(long timeout, TimeUnit unit) {
+		/*
+		 * Java 9 has TimeUnit.toChronoUnit(), which could be then used with Duration.of().
+		 * In Java 8, roundtrip via nanoseconds will suffice for timeouts up to 292 years.
+		 */
+		return get(Duration.ofNanos(unit.toNanos(timeout)));
+	}
 	@Override public String toString() {
 		ReactiveValue<T> value = variable.value();
 		if (value.blocking())
