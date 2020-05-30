@@ -49,6 +49,9 @@ public class ReactiveFuture<T> {
 	 */
 	public ReactiveFuture() {
 		this(new CompletableFuture<>());
+		synchronized (ReactiveFuture.class) {
+			associations.put(completable, this);
+		}
 	}
 	/*
 	 * Creating new reactive future adds a completion handler to the wrapped CompletableFuture.
