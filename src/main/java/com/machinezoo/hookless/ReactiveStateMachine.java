@@ -58,7 +58,7 @@ public class ReactiveStateMachine<T> {
 	private ReactiveStateMachine(ReactiveValue<T> initial, Supplier<T> supplier) {
 		Objects.requireNonNull(initial);
 		Objects.requireNonNull(supplier);
-		OwnerTrace.of(this).alias("machine");
+		OwnerTrace.of(this).alias("statemachine");
 		this.supplier = supplier;
 		output = OwnerTrace
 			.of(new ReactiveVariable<>(initial))
