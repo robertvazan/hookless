@@ -105,11 +105,40 @@ public class ReactiveStateMachine<T> {
 		 * Do not advance the state machine if it is still valid. This is a convenience to application code
 		 * that can now try to advance the state machine redundantly without it getting costly.
 		 * 
-		 * We could also check for non-null trigger, which would be faster, but that would make the check non-reactive,
-		 * the controlling computation wouldn't run again when the state is invalidated, and advancement would stop forever.
+		 * Here we have to be careful. We cannot just read valid() flag as that would create reactive dependency
+		 * that would be invalidated a few lines below when the valid() flag is set to true.
+		 * Such immediate invalidation would force another controlling (outer) reactive computation to run immediately after the current one ends.
+		 * While such overhead is common in reactive code and it is usually acceptable, it can be very wasteful here in some important use cases,
+		 * for example in ReactiveLazy where it would double compute cost of all reactive computations that read new/changed ReactiveLazy.
+		 *
+		 * We cannot just check for non-null trigger either as that would make the check completely non-reactive.
+		 * The controlling (outer) computation wouldn't run again when the state is invalidated and advancement would stop forever.
+		 *
+		 * Instead of creating dependency on the full valid() flag, we will reactively depend only on trigger state.
+		 * The difference is that trigger state only tracks validity of the last controlled (inner) computation
+		 * while the valid() flag tracks all current and future state of the whole reactive state machine.
+		 * Trigger state can change only in one direction from not fired to fired while valid() changes both ways.
+		 * This reduction in the scope of the dependency is sufficient to avoid redundant reactive computations
+		 * while keeping the dependency wide enough to ensure the state machine appears to be fully reactive.
+		 * 
+		 * Trigger itself is of course non-reactive, because it is a low-level reactive primitive.
+		 * So how do we depend on its state? We will read valid() flag but only after we have already set it to true.
+		 * This breaks the basic principle of reactive programming that dependencies are recorded before reads,
+		 * but it is safe here, because it is equivalent to a scenario, in which another thread advances the state machine
+		 * and the current thread executed shortly afterwards, reads the valid() flag (which is true), and returns without advancing.
+		 * 
+		 * This solution is so efficient that a lot of code can just blindly advance all the time without ever checking valid().
+		 * This may be actually more performant thanks to the reduced dependency optimization.
 		 */
-		if (valid.get())
+		if (trigger != null) {
+			/*
+			 * If the trigger is non-null, then valid() is true and we can just return without advancing.
+			 * We will record dependency on valid() to ensure that the controlling (outer) computation
+			 * tries to advance the state machine again when valid() becomes false.
+			 */
+			valid.get();
 			return;
+		}
 		ReactiveScope scope = OwnerTrace.of(new ReactiveScope())
 			.parent(this)
 			.target();
@@ -120,12 +149,21 @@ public class ReactiveStateMachine<T> {
 			ReactiveValue<T> value = ReactiveValue.capture(supplier);
 			/*
 			 * We will be sending two invalidations to the controlling reactive computation.
-			 * Discourage it first from advancing the state machine by marking its state as valid.
-			 * Only then set the output. This prevents unnecessary attempts to advance the state machine.
+			 * We will first discourage redundant advancement by setting valid() to true.
+			 * Only then we set the output. This prevents unnecessary attempts to advance the state machine.
 			 */
 			valid.set(true);
 			output.value(value);
 		}
+		/*
+		 * As mentioned above, we will create dependency on valid() to ensure the controlling (outer) computation
+		 * tries to advance again when the current state is invalidated, i.e. when valid() is set to false.
+		 * We have to do this after setting valid() to true above to avoid immediately invalidating current computation.
+		 * We also have to do it before arming the trigger, because trigger could fire immediately (inline)
+		 * and such firing involves setting valid() to false, by which time the dependency on valid() must already exist.
+		 * We have to be additionally careful not to create the dependency inside the controlled (inner) computation.
+		 */
+		valid.get();
 		if (scope.blocked())
 			pins = scope.pins();
 		trigger = OwnerTrace

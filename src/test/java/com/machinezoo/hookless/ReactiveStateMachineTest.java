@@ -142,8 +142,20 @@ public class ReactiveStateMachineTest {
 			return t;
 		};
 		Triggers t = check.apply(false, "initial");
+		Runnable advance = () -> {
+			try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+				sm.advance();
+				// Advancing the state machine never blocks even if the inner computation blocks.
+				assertFalse(CurrentReactiveScope.blocked());
+				try (ReactiveTrigger at = new ReactiveTrigger()) {
+					at.arm(c.scope().versions());
+					// Advancing the state machine never invalidates the current computation.
+					assertFalse(at.fired());
+				}
+			}
+		};
 		// Advancement both changes the output and marks the current state as valid.
-		sm.advance();
+		advance.run();
 		assertTrue(t.v.fired());
 		assertTrue(t.o.fired());
 		t = check.apply(true, "hello");
@@ -158,12 +170,12 @@ public class ReactiveStateMachineTest {
 		assertFalse(t.o.fired());
 		t = check.apply(false, "hello");
 		// Advancement again changes both the output and state validity.
-		sm.advance();
+		advance.run();
 		assertTrue(t.v.fired());
 		assertTrue(t.o.fired());
 		t = check.apply(true, "bye");
 		// Redundant advancement has no effect.
-		sm.advance();
+		advance.run();
 		assertFalse(t.v.fired());
 		assertFalse(t.o.fired());
 	}
