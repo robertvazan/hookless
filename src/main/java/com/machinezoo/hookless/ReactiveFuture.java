@@ -113,6 +113,7 @@ public class ReactiveFuture<T> {
 		if (value.blocking()) {
 			/*
 			 * Don't propagate blocking. This method is specifically intended to avoid all blocking.
+			 * CompletableFuture does not block (synchronously) either.
 			 */
 			return fallback;
 		}
@@ -146,8 +147,11 @@ public class ReactiveFuture<T> {
 			if (ReactiveInstant.now().isAfter(start.plus(timeout))) {
 				/*
 				 * Do not reactively block. The whole point of the timeout is to limit the duration of blocking.
+				 * CompletableFuture does not block (synchronously) in this case either.
 				 * 
 				 * Throw unchecked variant of TimeoutException to simplify use of the API and to stay consistent with other hookless APIs.
+				 * This exception type comes from Guava, which means we are creating hard dependency on Guava.
+				 * That's somewhat controversial, but it's better than declaring our own or throwing checked exceptions.
 				 */
 				throw new UncheckedTimeoutException();
 			}
