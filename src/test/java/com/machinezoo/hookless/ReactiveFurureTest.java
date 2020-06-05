@@ -12,6 +12,7 @@ import java.util.stream.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
+import org.junitpioneer.jupiter.*;
 import com.google.common.util.concurrent.*;
 
 public class ReactiveFurureTest {
@@ -152,7 +153,7 @@ public class ReactiveFurureTest {
 		for (ReactiveStateMachine<?> sm : sms)
 			assertTrue(sm.valid());
 	}
-	@ParameterizedTest @MethodSource("completers") public void reactiveTimeout(String name, Consumer<CompletableFuture<String>> completer) throws Exception {
+	@RepeatFailedTest(10) public void reactiveTimeout() throws Exception {
 		Function<ReactiveFuture<String>, String> m1 = f -> f.get(Duration.ofMillis(50));
 		Function<ReactiveFuture<String>, String> m2 = f -> f.get(50, TimeUnit.MILLISECONDS);
 		for (Function<ReactiveFuture<String>, String> m : Arrays.asList(m1, m2)) {
@@ -169,7 +170,7 @@ public class ReactiveFurureTest {
 			sm.advance();
 			assertTrue(sm.valid());
 			// When the reactive future is completed, the method signals another change since the result is now available.
-			completer.accept(rf.completable());
+			rf.completable().complete("done");
 			assertFalse(sm.valid());
 		}
 	}

@@ -80,7 +80,7 @@ public class ReactiveExecutorTest extends TestBase {
 		// But event count is much smaller, because queued tasks are aggregated in events.
 		assertThat(x.getEventCount(), lessThan(tc / 20L));
 	}
-	@RepeatFailedTest(3) public void parallelism() {
+	@RepeatFailedTest(10) public void parallelism() {
 		// Submit 300ms worth of 1ms tasks.
 		AtomicInteger n = new AtomicInteger();
 		int tc = 300 * Runtime.getRuntime().availableProcessors();
@@ -103,7 +103,7 @@ public class ReactiveExecutorTest extends TestBase {
 		else
 			x.execute(() -> cascade(depth - 1, then));
 	}
-	@RepeatFailedTest(3) public void latency() throws Exception {
+	@RepeatFailedTest(10) public void latency() throws Exception {
 		// Start 30ms long task cascade. This coincides with executor's maximum cascade depth of 30.
 		AtomicReference<Duration> latency = new AtomicReference<>();
 		long t0 = System.nanoTime();
