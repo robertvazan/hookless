@@ -1,6 +1,7 @@
 // Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless;
 
+import java.lang.ref.*;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -24,14 +25,23 @@ public class ReactiveFuture<T> {
 	 * Reactive future works by automatically transferring CompletableFuture state to reactive variable.
 	 * CompletableFuture states are a subset of reactive values (including blocking), which makes this very simple.
 	 * 
-	 * There's no need to keepalive() this object, because this is just a convenient API around the reactive variable.
-	 * The variable is not written by this object. It is written directly by CompletableFuture.
+	 * There's no need to keepalive() the reactive future, because completion callback
+	 * keeps the reactive future alive for as long as is necessary to ensure reactivity.
 	 * And CompletableFuture always stays alive long enough to invoke all chained actions.
 	 */
 	private final ReactiveVariable<T> variable = OwnerTrace
 		.of(new ReactiveVariable<T>(new ReactiveValue<T>(null, null, true)))
 		.parent(this)
 		.target();
+	/*
+	 * This is a separate method to make absolutely sure the completion callback created in constructor
+	 * will hold strong reference to 'this' (the reactive future) rather than just to the embedded reactive variable.
+	 * Two-way strong reference between reactive future and CompletableFuture ties lifetimes of the two objects,
+	 * which is essential to make deduplication of reactive future instances work in the WeakHashMap below.
+	 */
+	private void complete(T result, Throwable exception) {
+		variable.value(new ReactiveValue<>(result, exception, false));
+	}
 	private ReactiveFuture(CompletableFuture<T> completable) {
 		OwnerTrace.of(this).alias("future");
 		Objects.requireNonNull(completable);
@@ -42,7 +52,7 @@ public class ReactiveFuture<T> {
 		 * If it is not completed yet, callback is invoked synchronously.
 		 * That means there's no latency difference between CompletableFuture and its wrapping reactive future.
 		 */
-		completable.whenComplete((r, ex) -> variable.value(new ReactiveValue<>(r, ex, false)));
+		completable.whenComplete(this::complete);
 	}
 	/*
 	 * Give users freedom to choose whether to create CompletableFuture first or reactive future first.
@@ -50,7 +60,7 @@ public class ReactiveFuture<T> {
 	public ReactiveFuture() {
 		this(new CompletableFuture<>());
 		synchronized (ReactiveFuture.class) {
-			associations.put(completable, this);
+			associations.put(completable, new WeakReference<>(this));
 		}
 	}
 	/*
@@ -58,16 +68,46 @@ public class ReactiveFuture<T> {
 	 * If we allowed multiple reactive futures for one CompletableFuture, these completion handlers would pile up.
 	 * We will therefore enforce single wrapper per CompletableFuture. This is also more convenient to use.
 	 * 
-	 * WeakHashMap essentially adds a dynamic field to CompletableFuture holding strong reference to reactive future.
+	 * WeakHashMap essentially adds a dynamic field to CompletableFuture that references the associated reactive future.
+	 * The value of WeakHashMap however cannot be a strong reference, because WeakHashMap causes memory leaks
+	 * when value (reactive future) holds strong reference to its key (CompletableFuture), which is our case.
+	 * Only ephemerons can be used in such scenario, but those cannot be implemented in Java.
+	 * See:
+	 * https://en.wikipedia.org/wiki/Ephemeron
+	 * https://stackoverflow.com/a/9166730
+	 * 
+	 * So we either remove strong back-reference to CompletableFuture, make it weak, or make WeakHashMap values weak.
+	 * We cannot remove reference to CompletableFuture, because we offer API where reactive future is constructed first
+	 * and then CompletableFuture is retrieved from it. We cannot make the CompletableFuture reference weak,
+	 * because callers expect the CompletableFuture to exist as long as they hold a reference to its associated reactive future.
+	 * So the only remaining option is to make WeakHashMap values weak.
+	 * 
+	 * Reactive future is held alive by completion callback from reachable CompletableFuture (see complete() above).
+	 * Completion callback exists at least for as long as the CompletableFuture is not completed.
+	 * Reactive future therefore becomes unreachable when (1) it is not referenced directly
+	 * and (2) its associated CompletableFuture is either unreachable or already completed.
+	 * If the CompletableFuture is unreachable, then there is no one to complete it and reactivity is irrelevant.
+	 * It the CompletableFuture is already completed, no state change can happen anymore and reactivity is again irrelevant.
+	 * It is therefore safe for reactive future to be collected under these circumstances.
+	 * Its reactive variable might live longer if it is a dependency of some reactive computation, which is harmless.
+	 * 
+	 * These rules however allow reactive future to be collected while its (completed) CompletableFuture is still reachable.
+	 * That is okay, because the completed CompletableFuture no longer holds the completion callback
+	 * (as otherwise the reactive future would not be collected), so creating new reactive future for the CompletableFuture
+	 * will not cause accumulation of the completion callbacks that we were trying to prevent with this.
+	 * Callers would not ever observe two instances of reactive future for single CompletableFuture,
+	 * because the first reactive future is collected only after there are no references to it,
+	 * so callers cannot compare the second reactive future to anything they know.
 	 */
-	private static final Map<CompletableFuture<?>, ReactiveFuture<?>> associations = new WeakHashMap<>();
+	private static final Map<CompletableFuture<?>, WeakReference<ReactiveFuture<?>>> associations = new WeakHashMap<>();
 	@SuppressWarnings("unchecked") public static synchronized <T> ReactiveFuture<T> wrap(CompletableFuture<T> completable) {
 		Objects.requireNonNull(completable);
-		ReactiveFuture<?> cached = associations.get(completable);
+		WeakReference<ReactiveFuture<?>> weak = associations.get(completable);
+		ReactiveFuture<?> cached = weak != null ? weak.get() : null;
 		if (cached != null)
 			return (ReactiveFuture<T>)cached;
 		ReactiveFuture<T> reactive = new ReactiveFuture<T>(completable);
-		associations.put(completable, reactive);
+		associations.put(completable, new WeakReference<>(reactive));
 		return reactive;
 	}
 	/*
