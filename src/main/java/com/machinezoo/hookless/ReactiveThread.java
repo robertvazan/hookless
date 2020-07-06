@@ -159,15 +159,15 @@ public class ReactiveThread {
 	private ReactivePins pins;
 	/*
 	 * Timer sample is kept on instance level, so that we can also capture latency,
-	 * i.e. how long it took for the thread's runnable to be scheduled for execution.
+	 * i.e. how long it took for the thread's runnable to be scheduled for execution
+	 * as well as contribution of any blocking computations.
 	 */
 	private Timer.Sample sample;
-	private static final Timer timer = Metrics.timer("hookless.thread.iterations");
+	private static final Timer timer = Metrics.timer("hookless.thread.computations");
 	/*
 	 * Suppress resource warnings caused by closeable trigger not being closed after being constructed.
 	 */
 	@SuppressWarnings("resource") private void iterate() {
-		Timer.Sample sample;
 		ReactiveScope scope;
 		synchronized (this) {
 			/*
@@ -175,8 +175,6 @@ public class ReactiveThread {
 			 */
 			if (stopped)
 				return;
-			sample = this.sample;
-			this.sample = null;
 			scope = OwnerTrace.of(new ReactiveScope())
 				.parent(this)
 				.target();
@@ -184,6 +182,7 @@ public class ReactiveThread {
 				scope.pins(pins);
 			pins = null;
 		}
+		Throwable exception = null;
 		try (ReactiveScope.Computation computation = scope.enter()) {
 			try {
 				try {
@@ -191,34 +190,39 @@ public class ReactiveThread {
 					run();
 				} finally {
 					current.remove();
-					sample.stop(timer);
 				}
 			} catch (Throwable ex) {
-				/*
-				 * Silently ignore exceptions when the reactive computation is blocking, because they are normal.
-				 */
-				if (!scope.blocked()) {
-					running.remove(this);
-					synchronized (this) {
-						stopped = true;
-					}
-					/*
-					 * Handler must run within the reactive scope, so that it can contain reactive code.
-					 * We will run it outside of the synchronized block, because it could be an expensive operation.
-					 */
-					Exceptions.log(logger).run(() -> handler.accept(this, ex));
-					return;
-				}
+				exception = ex;
 			}
+		}
+		/*
+		 * Silently ignore exceptions when the reactive computation is blocking, because blocking exceptions are normal.
+		 */
+		if (exception != null && !scope.blocked()) {
+			/*
+			 * Non-blocking exception has the same effect as calling stop() except that uncaught exception handler is called as well.
+			 */
+			stop();
+			/*
+			 * Run the handler outside of the synchronized block, because it could be an expensive operation.
+			 */
+			Exceptions.log(logger).fromBiConsumer(handler).accept(this, exception);
 		}
 		synchronized (this) {
 			/*
-			 * In case stop() was called while the runnable was running.
+			 * In case stop() was called while the runnable was running. Or in case non-blocking exception was thrown.
 			 */
 			if (stopped)
 				return;
 			if (scope.blocked())
 				pins = scope.pins();
+			/*
+			 * Include all prior blocking computations in total latency.
+			 */
+			if (sample != null && !scope.blocked()) {
+				sample.stop(timer);
+				sample = null;
+			}
 			trigger = OwnerTrace
 				.of(new ReactiveTrigger()
 					.callback(this::invalidate))
@@ -234,8 +238,11 @@ public class ReactiveThread {
 	private void schedule() {
 		/*
 		 * Include scheduling latency in execution time. Latency is what we care about in UIs.
+		 * Do not overwrite existing timer sample though, because blocking computations should be included in thread's latency.
+		 * This method is always called in synchronized context, so the comparison is safe.
 		 */
-		sample = Timer.start(Clock.SYSTEM);
+		if (sample == null)
+			sample = Timer.start(Clock.SYSTEM);
 		/*
 		 * Method iterate() should never throw, but let's make sure.
 		 * Use weak Runnable to allow GCing of reactive threads that are only referenced from thread pool queue.
@@ -283,7 +290,13 @@ public class ReactiveThread {
 			trigger.close();
 			trigger = null;
 		}
-		sample = null;
+		if (sample != null) {
+			/*
+			 * Record the last computation in the timer. For some threads, it might be the only computation.
+			 */
+			sample.stop(timer);
+			sample = null;
+		}
 		pins = null;
 	}
 	@Override public String toString() {

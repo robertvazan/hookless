@@ -170,7 +170,7 @@ public class ReactiveScope {
 	}
 	/*
 	 * Blocking is necessary to prevent jerky display of incomplete results followed by complete results a split-second later.
-	 * It also prevent propagation of incomplete results through machine interfaces like the initial HTTP GET in PushMode.
+	 * It also prevents propagation of incomplete results through machine interfaces like the initial HTTP GET in PushMode.
 	 * Any reactive data source can block the computation if it cannot return complete data immediately.
 	 * Caller is then expected to re-run the computation later (when current one is invalidated).
 	 */
