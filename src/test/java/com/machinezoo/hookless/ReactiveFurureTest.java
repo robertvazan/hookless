@@ -1,12 +1,14 @@
 // Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless;
 
+import static org.awaitility.Awaitility.*;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.function.*;
 import java.util.stream.*;
 import org.junit.jupiter.api.*;
@@ -15,7 +17,7 @@ import org.junit.jupiter.params.provider.*;
 import org.junitpioneer.jupiter.*;
 import com.google.common.util.concurrent.*;
 
-public class ReactiveFurureTest {
+public class ReactiveFurureTest extends TestBase {
 	@Test public void wrap() {
 		// Any CompletableFuture can be wrapped.
 		CompletableFuture<String> cf = new CompletableFuture<>();
@@ -173,5 +175,50 @@ public class ReactiveFurureTest {
 			rf.completable().complete("done");
 			assertFalse(sm.valid());
 		}
+	}
+	@Test public void supplyReactive() throws Exception {
+		ReactiveVariable<String> v = new ReactiveVariable<>(new ReactiveValue<>("pending", true));
+		CompletableFuture<String> f = ReactiveFuture.supplyReactive(v::get);
+		// The future is not completed when the supplier is blocking.
+		Thread.sleep(100);
+		assertFalse(f.isDone());
+		// Non-blocking result will be stored in the future.
+		v.set("done");
+		await().until(f::isDone);
+		assertEquals("done", f.get());
+		// Further changes have no effect on the future.
+		v.set("extra");
+		Thread.sleep(100);
+		assertEquals("done", f.get());
+		// It works the same way with exceptions.
+		v.value(new ReactiveValue<>(new ReactiveBlockingException(), true));
+		f = ReactiveFuture.supplyReactive(v::get);
+		Thread.sleep(100);
+		assertFalse(f.isDone());
+		v.value(new ReactiveValue<>(new ArithmeticException()));
+		await().until(f::isDone);
+		assertTrue(f.isCompletedExceptionally());
+		ExecutionException ex = assertThrows(ExecutionException.class, f::get);
+		assertThat(ex.getCause(), instanceOf(ArithmeticException.class));
+	}
+	@Test public void runReactive() throws Exception {
+		AtomicInteger n = new AtomicInteger();
+		ReactiveVariable<String> v = new ReactiveVariable<>(new ReactiveValue<>("pending", true));
+		CompletableFuture<Void> f = ReactiveFuture.runReactive(() -> {
+			v.get();
+			n.incrementAndGet();
+		});
+		// Runnable runs, but the future is not completed, because the Runnable is blocking.
+		await().untilAtomic(n, equalTo(1));
+		Thread.sleep(100);
+		assertFalse(f.isDone());
+		// The first non-blocking run completes the future.
+		v.set("done");
+		await().untilAtomic(n, equalTo(2));
+		await().until(f::isDone);
+		// Further changes in dependencies do not cause the Runnable to run again.
+		v.set("extra");
+		Thread.sleep(100);
+		assertEquals(2, n.get());
 	}
 }

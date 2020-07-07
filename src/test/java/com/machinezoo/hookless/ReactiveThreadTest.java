@@ -81,7 +81,7 @@ public class ReactiveThreadTest extends TestBase {
 		await().untilAtomic(n, equalTo(1));
 		// Once the thread is stopped, it will not run in response to dependency changes.
 		v.set("hi");
-		Thread.sleep(30);
+		Thread.sleep(100);
 		assertEquals(1, n.get());
 	}
 	@Test public void states() throws Exception {
@@ -96,13 +96,13 @@ public class ReactiveThreadTest extends TestBase {
 		t.stop();
 		// Thread cannot be restarted, but since it is allowed to stop the thread before it is started, restart attempts are silently ignored. 
 		t.start();
-		Thread.sleep(30);
+		Thread.sleep(100);
 		assertEquals(1, n.get());
 		// It is allowed to stop the thread before it is started. In that case, starting the thread has no effect.
 		t = new ReactiveThread(n::incrementAndGet);
 		t.stop();
 		t.start();
-		Thread.sleep(30);
+		Thread.sleep(100);
 		assertEquals(1, n.get());
 	}
 	@Test public void pinning() throws Exception {
@@ -151,7 +151,7 @@ public class ReactiveThreadTest extends TestBase {
 		t.handler((rt, ex) -> o.set("exception"));
 		// Blocking exception is silently ignored.
 		t.start();
-		Thread.sleep(30);
+		Thread.sleep(100);
 		assertNull(o.get());
 		// Reactive thread continues to run when dependencies change.
 		v.set("hello");
@@ -169,7 +169,7 @@ public class ReactiveThreadTest extends TestBase {
 		await().until(o::get, equalTo("handled"));
 		// Thread is stopped. Dependency changes don't cause the thread to run again.
 		v.set("bye");
-		Thread.sleep(30);
+		Thread.sleep(100);
 		assertEquals("handled", o.get());
 	}
 	volatile Object pressure;
