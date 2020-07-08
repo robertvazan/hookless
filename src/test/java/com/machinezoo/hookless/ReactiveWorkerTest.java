@@ -163,4 +163,16 @@ public class ReactiveWorkerTest extends TestBase {
 		// Worker starts again and generates non-blocking output.
 		await().until(() -> !capture(w::get).blocking());
 	}
+	@Test public void executor() {
+		ReactiveWorker<ReactiveExecutor> w = new ReactiveWorker<>(() -> ReactiveExecutor.current());
+		// Common reactive executor is used by default.
+		assertSame(ReactiveExecutor.common(), w.executor());
+		ReactiveExecutor x = new ReactiveExecutor();
+		// Custom executor can be set.
+		w.executor(x);
+		assertSame(x, w.executor());
+		// Worker runs on the executor.
+		await().ignoreExceptions().until(w::get, sameInstance(x));
+		x.shutdown();
+	}
 }

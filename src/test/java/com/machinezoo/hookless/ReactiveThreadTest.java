@@ -188,4 +188,18 @@ public class ReactiveThreadTest extends TestBase {
 		while (w.get() != null)
 			pressure = Arrays.asList(pressure);
 	}
+	@Test public void executor() {
+		AtomicReference<ReactiveExecutor> cx = new AtomicReference<>();
+		ReactiveThread t = new ReactiveThread(() -> cx.set(ReactiveExecutor.current()));
+		// Common reactive executor is used by default.
+		assertSame(ReactiveExecutor.common(), t.executor());
+		ReactiveExecutor x = new ReactiveExecutor();
+		// Custom executor can be set.
+		t.executor(x);
+		assertSame(x, t.executor());
+		t.start();
+		// Thread runs on the executor.
+		await().untilAtomic(cx, sameInstance(x));
+		x.shutdown();
+	}
 }

@@ -122,4 +122,7 @@ public class ReactiveExecutorTest extends TestBase {
 		assertThat(ms, greaterThan(30L));
 		assertThat(ms, lessThan(45L));
 	}
+	@Test public void current() throws Exception {
+		assertSame(x, x.submit(() -> ReactiveExecutor.current()).get());
+	}
 }

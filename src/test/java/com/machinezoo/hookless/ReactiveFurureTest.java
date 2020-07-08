@@ -221,4 +221,21 @@ public class ReactiveFurureTest extends TestBase {
 		settle();
 		assertEquals(2, n.get());
 	}
+	@Test public void supplyReactiveExecutor() {
+		ReactiveExecutor x = new ReactiveExecutor();
+		// Custom executor can be specified.
+		CompletableFuture<ReactiveExecutor> f = ReactiveFuture.supplyReactive(() -> ReactiveExecutor.current(), x);
+		// Supplier runs on the executor.
+		assertSame(x, f.join());
+		x.shutdown();
+	}
+	@Test public void runReactiveExecutor() {
+		AtomicReference<ReactiveExecutor> cx = new AtomicReference<>();
+		ReactiveExecutor x = new ReactiveExecutor();
+		// Custom executor can be specified.
+		ReactiveFuture.runReactive(() -> cx.set(ReactiveExecutor.current()), x).join();
+		// Runnable runs on the executor.
+		assertSame(x, cx.get());
+		x.shutdown();
+	}
 }

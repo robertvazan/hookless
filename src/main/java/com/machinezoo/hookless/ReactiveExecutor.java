@@ -44,7 +44,8 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 	/*
 	 * We will wrap every task submitted to the executor in order to make the tasks sortable by event/task ID.
 	 */
-	private class ReactiveTask implements Runnable, Comparable<ReactiveTask> {
+	private static class ReactiveTask implements Runnable, Comparable<ReactiveTask> {
+		final ReactiveExecutor executor;
 		final long eventId;
 		final long taskId = taskCounter.incrementAndGet();
 		/*
@@ -53,7 +54,8 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 		final int depth;
 		final Runnable runnable;
 		final Timer.Sample sample;
-		ReactiveTask(long eventId, int depth, Runnable runnable) {
+		ReactiveTask(ReactiveExecutor executor, long eventId, int depth, Runnable runnable) {
+			this.executor = executor;
 			this.eventId = eventId;
 			this.runnable = runnable;
 			this.depth = depth;
@@ -65,10 +67,7 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 			 * By starting the timer sample here, we include queuing latency in the measurement.
 			 * Total latency is usually more important than throughput in hookless applications.
 			 */
-			sample = ReactiveExecutor.this == common ? Timer.start() : null;
-		}
-		boolean ownedBy(ReactiveExecutor executor) {
-			return executor == ReactiveExecutor.this;
+			sample = executor == common ? Timer.start() : null;
 		}
 		@Override public int compareTo(ReactiveTask other) {
 			if (eventId != other.eventId)
@@ -93,7 +92,7 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 			 * Normal FIFO queue of ThreadPoolExecutor would eliminate all such inefficiency,
 			 * but reactive executor is designed to reduce latency and we are willing to sacrifice some throughput for it.  
 			 */
-			eventCounter.compareAndSet(eventId, eventId + 1);
+			executor.eventCounter.compareAndSet(eventId, eventId + 1);
 			/*
 			 * Expose reference to the current task via thread-local variable, so that child tasks spawned from this task inherit event ID.
 			 */
@@ -135,16 +134,23 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 	 * Even if the cascade is longer, tasks will still be aggregated in groups of 30, reducing total latency by a factor of 30.
 	 */
 	private static final int MAX_DEPTH = 30;
+	/*
+	 * We could also override newTaskFor(), but then tasks submitted directly via execute() would not be wrapped.
+	 */
 	@Override public void execute(Runnable runnable) {
 		Objects.requireNonNull(runnable);
 		ReactiveTask current = running.get();
 		/*
 		 * We will check whether the current task belongs to this executor, because every executor has separate event counter.
 		 */
-		if (current != null && current.ownedBy(this) && current.depth < MAX_DEPTH)
-			super.execute(new ReactiveTask(current.eventId, current.depth + 1, runnable));
+		if (current != null && current.executor == this && current.depth < MAX_DEPTH)
+			super.execute(new ReactiveTask(this, current.eventId, current.depth + 1, runnable));
 		else
-			super.execute(new ReactiveTask(eventCounter.get(), 0, runnable));
+			super.execute(new ReactiveTask(this, eventCounter.get(), 0, runnable));
+	}
+	public static ReactiveExecutor current() {
+		ReactiveTask task = running.get();
+		return task != null ? task.executor : null;
 	}
 	/*
 	 * We will define one common reactive executor that will be used as default in all reactive primitives that need an executor.
