@@ -61,7 +61,16 @@ public class ReactiveStateMachine<T> {
 		OwnerTrace.of(this).alias("statemachine");
 		this.supplier = supplier;
 		output = OwnerTrace
-			.of(new ReactiveVariable<>(initial))
+			.of(new ReactiveVariable<>(initial)
+				/*
+				 * Disable equality checking in the variable.
+				 * Some uses of this class (e.g. ReactiveWorker) need to inspect every output even if it is equal.
+				 * This is also a safe choice for performance as equality checks can be slow.
+				 * 
+				 * We could expose equality configuration API in the future,
+				 * but it is unlikely to be useful for the relatively low-level tasks this class is used for.
+				 */
+				.equality(false))
 			.parent(this)
 			.tag("role", "output")
 			.target();

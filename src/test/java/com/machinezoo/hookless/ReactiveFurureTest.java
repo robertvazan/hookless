@@ -96,7 +96,7 @@ public class ReactiveFurureTest extends TestBase {
 			assertFalse(CurrentReactiveScope.blocked());
 		}
 	}
-	@RepeatedTest(3) public void timeout() throws Exception {
+	@RepeatedTest(3) public void timeout() {
 		ReactiveFuture<String> rf = new ReactiveFuture<>();
 		// Timeout overloads initially reactively block.
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
@@ -108,7 +108,7 @@ public class ReactiveFurureTest extends TestBase {
 			assertTrue(CurrentReactiveScope.blocked());
 		}
 		// When the timeout expires, the same methods throw non-blocking timeout exception instead.
-		Thread.sleep(100);
+		sleep(100);
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			assertThrows(UncheckedTimeoutException.class, () -> rf.get(Duration.ofMillis(50)));
 			assertThrows(UncheckedTimeoutException.class, () -> rf.get(50, TimeUnit.MILLISECONDS));
@@ -155,7 +155,7 @@ public class ReactiveFurureTest extends TestBase {
 		for (ReactiveStateMachine<?> sm : sms)
 			assertTrue(sm.valid());
 	}
-	@RepeatFailedTest(10) public void reactiveTimeout() throws Exception {
+	@RepeatFailedTest(10) public void reactiveTimeout() {
 		Function<ReactiveFuture<String>, String> m1 = f -> f.get(Duration.ofMillis(50));
 		Function<ReactiveFuture<String>, String> m2 = f -> f.get(50, TimeUnit.MILLISECONDS);
 		for (Function<ReactiveFuture<String>, String> m : Arrays.asList(m1, m2)) {
@@ -166,7 +166,7 @@ public class ReactiveFurureTest extends TestBase {
 			sm.advance();
 			assertTrue(sm.valid());
 			// When timeout expires, the method signals change since the type of exception has changed.
-			Thread.sleep(100);
+			sleep(100);
 			assertFalse(sm.valid());
 			assertThrows(UncheckedTimeoutException.class, () -> m.apply(rf));
 			sm.advance();
@@ -176,24 +176,24 @@ public class ReactiveFurureTest extends TestBase {
 			assertFalse(sm.valid());
 		}
 	}
-	@Test public void supplyReactive() throws Exception {
+	@Test public void supplyReactive() {
 		ReactiveVariable<String> v = new ReactiveVariable<>(new ReactiveValue<>("pending", true));
 		CompletableFuture<String> f = ReactiveFuture.supplyReactive(v::get);
 		// The future is not completed when the supplier is blocking.
-		Thread.sleep(100);
+		settle();
 		assertFalse(f.isDone());
 		// Non-blocking result will be stored in the future.
 		v.set("done");
 		await().until(f::isDone);
-		assertEquals("done", f.get());
+		assertEquals("done", f.join());
 		// Further changes have no effect on the future.
 		v.set("extra");
-		Thread.sleep(100);
-		assertEquals("done", f.get());
+		settle();
+		assertEquals("done", f.join());
 		// It works the same way with exceptions.
 		v.value(new ReactiveValue<>(new ReactiveBlockingException(), true));
 		f = ReactiveFuture.supplyReactive(v::get);
-		Thread.sleep(100);
+		settle();
 		assertFalse(f.isDone());
 		v.value(new ReactiveValue<>(new ArithmeticException()));
 		await().until(f::isDone);
@@ -201,7 +201,7 @@ public class ReactiveFurureTest extends TestBase {
 		ExecutionException ex = assertThrows(ExecutionException.class, f::get);
 		assertThat(ex.getCause(), instanceOf(ArithmeticException.class));
 	}
-	@Test public void runReactive() throws Exception {
+	@Test public void runReactive() {
 		AtomicInteger n = new AtomicInteger();
 		ReactiveVariable<String> v = new ReactiveVariable<>(new ReactiveValue<>("pending", true));
 		CompletableFuture<Void> f = ReactiveFuture.runReactive(() -> {
@@ -210,7 +210,7 @@ public class ReactiveFurureTest extends TestBase {
 		});
 		// Runnable runs, but the future is not completed, because the Runnable is blocking.
 		await().untilAtomic(n, equalTo(1));
-		Thread.sleep(100);
+		settle();
 		assertFalse(f.isDone());
 		// The first non-blocking run completes the future.
 		v.set("done");
@@ -218,7 +218,7 @@ public class ReactiveFurureTest extends TestBase {
 		await().until(f::isDone);
 		// Further changes in dependencies do not cause the Runnable to run again.
 		v.set("extra");
-		Thread.sleep(100);
+		settle();
 		assertEquals(2, n.get());
 	}
 }
