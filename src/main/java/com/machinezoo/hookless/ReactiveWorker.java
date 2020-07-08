@@ -67,6 +67,8 @@ public class ReactiveWorker<T> implements Supplier<T> {
 			/*
 			 * Since the worker is based on "dameon" reactive thread, it would be garbage collected if it is not directly referenced.
 			 * It can be however referenced indirectly by dependent computations waiting on the variable.
+			 * Even though such dependent computations cannot retrieve new values since they don't have worker reference,
+			 * they might still need to be informed about changes in their dependencies, which wouldn't happen if the worker is GC-ed.
 			 * So link the variable to the worker to avoid premature garbage collection.
 			 */
 			.keepalive(this)
@@ -103,29 +105,37 @@ public class ReactiveWorker<T> implements Supplier<T> {
 		return initial(new ReactiveValue<>(result, true));
 	}
 	/*
-	 * Worker should cease to work when its output is not used. We will track usage with a flag.
+	 * Using reactive thread in daemon mode ensures that unused reactive workers will not waste memory.
+	 * Unused worker can however still waste CPU until it is GC-ed, which might happen after a very long time.
+	 * We cannot directly check whether the worker is used, because dependent computations themselves could be garbage.
+	 * We will instead produce probing invalidations time to time that wake up dependent computations.
+	 * Dependents are then expected to reread worker's output, which is something we can detect.
+	 * If no dependent computation reads worker's output, we will leave the worker in paused state.
+	 * We cannot destroy the worker yet, because we could later get a read, which causes the worker to resume activity.
+	 * 
+	 * Now the question is what does "time to time" mean. Invalidations cause expensive reevaluation of dependent computations.
+	 * We will space them exponentially in time to limit their cost. Time here means worker activity measured in number of iterations.
+	 * 
+	 * This strategy is less effective against deep graphs of reactive workers
+	 * where worker longevity may grow exponentially with graph depth.
+	 * Dealing with such situations is still possible, but it would require more frequent pausing, likely guided by real time.
+	 * 
+	 * Age below is the number of iterations, i.e. invocations of run() method. It doesn't need to be reactive.
+	 * Generation is incremented when the highest bit of age moves up. This results in exponential spacing of invalidations.
+	 * We will initialize age to non-zero value, so that a number of iterations is allowed to run before first pause.
 	 */
-	private final ReactiveVariable<Boolean> used = OwnerTrace
-		.of(new ReactiveVariable<>(false))
-		.parent(this)
-		.tag("role", "used")
-		.target();
+	private long age = 4;
+	private static int generation(long age) {
+		/*
+		 * Zero age results in generation 0. 1 -> 1, 2..3 -> 2, 4..7 -> 3, etc.
+		 */
+		return 64 - Long.numberOfLeadingZeros(age);
+	}
 	/*
-	 * We are supposed to cease activity when the worker is unused, but how do we know it is unused?
-	 * When the output changes, we will receive a get() call as dependent reactive computations are reevaluated.
-	 * But what if the output doesn't change, i.e. it compares equal? We cannot invalidate dependents on equal output
-	 * and since the dependents that last called get() might no longer exist or they could be garbage,
-	 * we might end up producing a long train of equal outputs unnecessarily.
-	 * 
-	 * We will therefore produce probing invalidations that are exponentially spaced in time.
-	 * Time here is measured in number of state machine advancements we have made without changing the output.
-	 * 
-	 * Age below is the number of outputs that compared equal. It can be non-reactive.
-	 * Generation is incremented when the highest bit of age moves up. It is reactive as it is used to signal dependents.
+	 * Current generation is written into this variable to ping all dependent computations.
 	 */
-	private long age;
-	private final ReactiveVariable<Integer> generation = OwnerTrace
-		.of(new ReactiveVariable<>(-1)
+	private final ReactiveVariable<Integer> ping = OwnerTrace
+		.of(new ReactiveVariable<>(generation(age))
 			/*
 			 * This variable is accessed from get(). Make sure that reference to it will keep the whole worker alive.
 			 * This is not strictly necessary since access to this variable is coupled with access to output variable,
@@ -133,7 +143,17 @@ public class ReactiveWorker<T> implements Supplier<T> {
 			 */
 			.keepalive(this))
 		.parent(this)
-		.tag("role", "generation")
+		.tag("role", "ping")
+		.target();
+	/*
+	 * Dependent computations acknowledge the ping by rereading worker's output.
+	 * When get() is called, value of ping variable is copied into ack variable.
+	 * This way the worker knows whether the last ping was acknowledged and thus whether it should be paused or not.
+	 */
+	private final ReactiveVariable<Integer> ack = OwnerTrace
+		.of(new ReactiveVariable<>(generation(age)))
+		.parent(this)
+		.tag("role", "ack")
 		.target();
 	/*
 	 * We will use reactive thread and state machine instead of reactive primitives (scope, trigger, pins).
@@ -154,14 +174,15 @@ public class ReactiveWorker<T> implements Supplier<T> {
 			return;
 		ReactiveValue<T> last;
 		/*
-		 * Synchronized to ensure correct state transitions for used+generation+output trio.
+		 * Synchronized to ensure correct state transitions for output+ping+ack trio.
 		 */
 		synchronized (this) {
 			last = output.value();
 			/*
 			 * Cease all activity when nobody is using worker's output.
 			 */
-			if (!used.get()) {
+			boolean used = ping.get() == (int)ack.get();
+			if (!used) {
 				/*
 				 * Since we cease activity despite state machine invalidation, the output is now stale. We will mark it as blocking.
 				 * Blocking output can be left stale, because we will get an opportunity to refresh it when someone requests it.
@@ -200,42 +221,20 @@ public class ReactiveWorker<T> implements Supplier<T> {
 		} else
 			equal = fresh.same(last);
 		/*
-		 * Synchronized to ensure correct state transitions for used+generation+output trio.
+		 * Synchronized to ensure correct state transitions for output+ping+ack trio.
 		 */
 		synchronized (this) {
 			/*
-			 * Don't change the output if advancement of the state machine had no real effect on its output.
+			 * Don't change the output variable if advancement of the state machine had no real effect on the output.
 			 */
-			if (!equal) {
-				/*
-				 * Output is definitely changing. Worker should be considered unused until the next get() call.
-				 */
-				used.set(false);
+			if (!equal)
 				output.value(fresh);
-			} else {
-				/*
-				 * Nothing changed, but we consumed some CPU time. This could be a problem if the worker is in fact already unreachable.
-				 * Send probing invalidations time to time to ensure we are not doing this unnecessarily.
-				 * 
-				 * We only need to increment this when the output compares equal.
-				 * Unequal output already invalidates all dependent reactive computations.
-				 */
-				++age;
-				/*
-				 * This will increment generation every time worker's age doubles (and also set it after first equality check).
-				 * When incremented, probing invalidation is sent to all dependent reactive computations
-				 * to see whether any of them are still alive.
-				 */
-				int leading = Long.numberOfLeadingZeros(age);
-				if (leading != generation.get()) {
-					/*
-					 * This resembles code above for when output changes except that here generation changes instead.
-					 * Generation effectively extends observable state of the worker, so that we can create synthetic change for signaling.
-					 */
-					used.set(false);
-					generation.set(leading);
-				}
-			}
+			/*
+			 * We have to prevent waste of CPU, which may occur if GC is slow to remove unused worker.
+			 * Send probing invalidations time to time to check whether the worker is still used.
+			 */
+			++age;
+			ping.set(generation(age));
 		}
 	}
 	private final ReactiveThread thread = OwnerTrace
@@ -257,7 +256,7 @@ public class ReactiveWorker<T> implements Supplier<T> {
 		return thread.executor();
 	}
 	/*
-	 * Synchronized to ensure correct state transitions for used+generation+output trio.
+	 * Synchronized to ensure correct state transitions for output+ping+ack trio.
 	 */
 	@Override public synchronized T get() {
 		/*
@@ -268,15 +267,11 @@ public class ReactiveWorker<T> implements Supplier<T> {
 			thread.start();
 		}
 		/*
-		 * Someone requested the output. The worker is now considered used until it is invalidated.
+		 * Someone requested the output. The worker is now considered used until next generation increment.
+		 * This creates dependency on ping variable that will allow the worker to send probing invalidations to all dependent computations.
 		 */
-		used.set(true);
-		/*
-		 * Create dependency on generation variable to allow the worker to send probing invalidations to all dependent computations.
-		 */
-		generation.get();
-		T result = output.get();
-		return result;
+		ack.set(ping.get());
+		return output.get();
 	}
 	@Override public String toString() {
 		return OwnerTrace.of(this) + " = " + output.value();
