@@ -147,25 +147,33 @@ public class ReactiveWorker<T> implements Supplier<T> {
 	 * and we never rely on simultaneous changes to multiple variables. Some variables are also used exclusively here.
 	 */
 	private void run() {
-		ReactiveValue<T> last;
 		/*
 		 * Don't ever do anything if we already use the last output from the state machine.
 		 */
 		if (generator.valid())
 			return;
-		last = output.value();
+		ReactiveValue<T> last;
 		/*
-		 * Cease all activity when nobody is using worker's output.
+		 * Synchronized to ensure correct state transitions for used+generation+output trio.
 		 */
-		if (!used.get()) {
+		synchronized (this) {
+			last = output.value();
 			/*
-			 * Since we cease activity despite state machine invalidation, the output is now stale. We will mark it as blocking.
-			 * Blocking output can be left stale, because we will get an opportunity to refresh it when someone requests it.
+			 * Cease all activity when nobody is using worker's output.
 			 */
-			if (!last.blocking())
-				output.value(new ReactiveValue<>(last.result(), last.exception(), true));
-			return;
+			if (!used.get()) {
+				/*
+				 * Since we cease activity despite state machine invalidation, the output is now stale. We will mark it as blocking.
+				 * Blocking output can be left stale, because we will get an opportunity to refresh it when someone requests it.
+				 */
+				if (!last.blocking())
+					output.value(new ReactiveValue<>(last.result(), last.exception(), true));
+				return;
+			}
 		}
+		/*
+		 * Advancement of the generator as well as equality check are performed unsynchronized, because they can be slow.
+		 */
 		generator.advance();
 		ReactiveValue<T> fresh = generator.output();
 		/*
@@ -192,29 +200,42 @@ public class ReactiveWorker<T> implements Supplier<T> {
 		} else
 			equal = fresh.same(last);
 		/*
-		 * Don't do anything if advancement of the state machine had no real effect on its output.
+		 * Synchronized to ensure correct state transitions for used+generation+output trio.
 		 */
-		if (!equal) {
+		synchronized (this) {
 			/*
-			 * Output is definitely changing. Worker should be considered unused until the next get() call.
+			 * Don't change the output if advancement of the state machine had no real effect on its output.
 			 */
-			used.set(false);
-			output.value(fresh);
-		} else {
-			/*
-			 * Nothing changed, but we consumed some CPU time. This could be a problem if the worker is in fact already unreachable.
-			 * Send probing invalidations time to time to ensure we are not doing this unnecessarily.
-			 * 
-			 * We only need to increment this when the output compares equal.
-			 * Unequal output already invalidates all dependent reactive computations.
-			 */
-			++age;
-			/*
-			 * This will increment generation every time worker's age doubles (and also set it after first equality check).
-			 * When incremented, probing invalidation is sent to all dependent reactive computations
-			 * to see whether any of them are still alive.
-			 */
-			generation.set(Long.numberOfLeadingZeros(age));
+			if (!equal) {
+				/*
+				 * Output is definitely changing. Worker should be considered unused until the next get() call.
+				 */
+				used.set(false);
+				output.value(fresh);
+			} else {
+				/*
+				 * Nothing changed, but we consumed some CPU time. This could be a problem if the worker is in fact already unreachable.
+				 * Send probing invalidations time to time to ensure we are not doing this unnecessarily.
+				 * 
+				 * We only need to increment this when the output compares equal.
+				 * Unequal output already invalidates all dependent reactive computations.
+				 */
+				++age;
+				/*
+				 * This will increment generation every time worker's age doubles (and also set it after first equality check).
+				 * When incremented, probing invalidation is sent to all dependent reactive computations
+				 * to see whether any of them are still alive.
+				 */
+				int leading = Long.numberOfLeadingZeros(age);
+				if (leading != generation.get()) {
+					/*
+					 * This resembles code above for when output changes except that here generation changes instead.
+					 * Generation effectively extends observable state of the worker, so that we can create synthetic change for signaling.
+					 */
+					used.set(false);
+					generation.set(leading);
+				}
+			}
 		}
 	}
 	private final ReactiveThread thread = OwnerTrace
@@ -236,7 +257,7 @@ public class ReactiveWorker<T> implements Supplier<T> {
 		return thread.executor();
 	}
 	/*
-	 * Synchronization is only needed to access and change 'started' variable.
+	 * Synchronized to ensure correct state transitions for used+generation+output trio.
 	 */
 	@Override public synchronized T get() {
 		/*
@@ -254,7 +275,8 @@ public class ReactiveWorker<T> implements Supplier<T> {
 		 * Create dependency on generation variable to allow the worker to send probing invalidations to all dependent computations.
 		 */
 		generation.get();
-		return output.get();
+		T result = output.get();
+		return result;
 	}
 	@Override public String toString() {
 		return OwnerTrace.of(this) + " = " + output.value();

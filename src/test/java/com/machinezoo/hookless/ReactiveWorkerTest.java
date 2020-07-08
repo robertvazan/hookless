@@ -136,4 +136,31 @@ public class ReactiveWorkerTest extends TestBase {
 		// Equality cannot be changed once the worker is started.
 		assertThrows(IllegalStateException.class, () -> iw.equality(true));
 	}
+	@Test public void pause() {
+		// Consider an expensive busy-looping worker.
+		ReactiveVariable<Long> v = new ReactiveVariable<>(0L);
+		ReactiveWorker<Long> w = new ReactiveWorker<>(() -> {
+			v.set(v.get() + 1);
+			return v.get();
+		});
+		w.initial(0L);
+		// Keep it alive by referencing it from a reactive thread.
+		ReactiveThread t = new ReactiveThread(() -> w.get());
+		t.start();
+		try {
+			// Worker keeps running.
+			await().until(v::get, greaterThan(100L));
+		} finally {
+			t.stop();
+		}
+		// When the thread is stopped and the worker is no longer queried, it ceases to execute.
+		settle();
+		long n = v.get();
+		settle();
+		assertEquals(n, v.get());
+		// The next value read is marked as blocking, because the worker stopped updating it.
+		assertEquals(new ReactiveValue<>(n, true), capture(w::get));
+		// Worker starts again and generates non-blocking output.
+		await().until(() -> !capture(w::get).blocking());
+	}
 }
