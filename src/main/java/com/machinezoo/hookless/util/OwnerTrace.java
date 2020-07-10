@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import com.google.common.cache.*;
 import io.opentracing.*;
+import it.unimi.dsi.fastutil.objects.*;
 
 /*
  * Opentracing doesn't work that well for reactive code, because reactive code inverts call stacks.
@@ -157,6 +158,51 @@ public class OwnerTrace<T> {
 		return this;
 	}
 	/*
+	 * When using OwnerTrace in tracing spans and toString(), we have to namespace tags of different ancestors.
+	 * By default, tag's namespace is identical to object's alias, but it can be numbered in case there are alias conflicts.
+	 */
+	private static class Namespace {
+		OwnerTraceData data;
+		/*
+		 * May differ from from alias if there are name conflicts among ancestors.
+		 */
+		String name;
+	}
+	/*
+	 * The linked list of ancestors we actually store only allows backward iteration of ancestor chain.
+	 * We have to materialize the ancestor chain and reverse it in order to iterate it in forward direction.
+	 * The materialized ancestor list is also necessary to create uniquely named namespaces.
+	 * 
+	 * All this is relatively computationally expensive and unfortunately it has to run often.
+	 * Unless we can find a way to execute it less often (e.g. by having a way to detect whether tracing is active),
+	 * we will probably have to optimize this code in the future.
+	 */
+	private List<Namespace> namespaces() {
+		List<Namespace> namespaces = new ArrayList<>();
+		for (OwnerTraceData ancestor = data; ancestor != null; ancestor = ancestor.parent) {
+			Namespace ns = new Namespace();
+			ns.data = ancestor;
+			namespaces.add(ns);
+		}
+		Collections.reverse(namespaces);
+		Object2IntMap<String> numbering = new Object2IntOpenHashMap<>(namespaces.size());
+		for (Namespace ns : namespaces) {
+			/*
+			 * Make a copy since the alias could be changed in another thread (unlikely but possible).
+			 */
+			String alias = ns.data.alias;
+			if (!numbering.containsKey(alias)) {
+				ns.name = alias;
+				numbering.put(alias, 2);
+			} else {
+				int number = numbering.getInt(alias);
+				ns.name = alias + number;
+				numbering.put(alias, number + 1);
+			}
+		}
+		return namespaces;
+	}
+	/*
 	 * We can now use the constructed ownership hierarchy and tags to create informative tracing span.
 	 * 
 	 * This is quite expensive operation. Ideally, we would like to skip it if the trace is going to be sampled out.
@@ -166,56 +212,43 @@ public class OwnerTrace<T> {
 	 */
 	public Span fill(Span span) {
 		Objects.requireNonNull(span);
-		/*
-		 * If there are tag conflicts among ancestors, we can either prefer higher or lower ancestors.
-		 * We prefer higher ancestors, because they likely contain more recognizable context information.
-		 * This also makes it simpler to implement ancestor iteration.
-		 */
-		for (OwnerTraceData ancestor = data; ancestor != null; ancestor = ancestor.parent)
-			fill(ancestor, span);
-		return span;
-	}
-	private static void fill(OwnerTraceData data, Span span) {
-		/*
-		 * Avoid race rules by reading the tags field only once.
-		 */
-		OwnerTag head = data.tags;
-		if (head != null) {
+		for (Namespace ns : namespaces()) {
 			/*
-			 * Prefixes will conflict in case we have two ancestors of the same type, for example nested reactive scopes.
-			 * We could number such conflicting ancestors, but since such conflicts are rare and inconsequential,
-			 * we will be lazy, do the simplest (overwriting) implementation, and wait for the first bug report complaining about it.
+			 * Avoid race rules by reading the tags field only once.
 			 */
-			String prefix = data.alias + ".";
-			for (OwnerTag tag = head; tag != null; tag = tag.next) {
-				String key = prefix + tag.key;
-				Object value = tag.value;
+			OwnerTag head = ns.data.tags;
+			if (head != null) {
+				for (OwnerTag tag = head; tag != null; tag = tag.next) {
+					String key = ns.name + "." + tag.key;
+					Object value = tag.value;
+					/*
+					 * Opentracing API only takes certain types of variables, so cast appropriately.
+					 * We will convert arbitrary objects via toString(). This is a bit dangerous,
+					 * but callers are expected to be careful what are they setting as the tag value.
+					 */
+					if (value instanceof String)
+						span.setTag(key, (String)value);
+					else if (value instanceof Number)
+						span.setTag(key, (Number)value);
+					else if (value instanceof Boolean)
+						span.setTag(key, (boolean)value);
+					else
+						span.setTag(key, value.toString());
+				}
+			} else {
 				/*
-				 * Opentracing API only takes certain types of variables, so cast appropriately.
-				 * We will convert arbitrary objects via toString(). This is a bit dangerous,
-				 * but callers are expected to be careful what are they setting as the tag value.
+				 * If there are no tags, then it wouldn't be apparent from the trace that this object is present.
+				 * We will therefore at least include its classname or alias if nothing else.
+				 * 
+				 * We could also force generation of ID tag at this point, but that's unnecessary,
+				 * because higher-level objects are expected to contain sufficient identifying information.
+				 * We just need to make ownership hierarchy apparent from the tags
+				 * and simple boolean will suffice for that purpose.
 				 */
-				if (value instanceof String)
-					span.setTag(key, (String)value);
-				else if (value instanceof Number)
-					span.setTag(key, (Number)value);
-				else if (value instanceof Boolean)
-					span.setTag(key, (boolean)value);
-				else
-					span.setTag(key, value.toString());
+				span.setTag(ns.name, true);
 			}
-		} else {
-			/*
-			 * If there are no tags, then it wouldn't be apparent from the trace that this object is present.
-			 * We will therefore at least include its classname or alias if nothing else.
-			 * 
-			 * We could also force generation of ID tag at this point, but that's unnecessary,
-			 * because higher-level objects are expected to contain sufficient identifying information.
-			 * We just need to make ownership hierarchy apparent from the tags
-			 * and simple boolean will suffice for that purpose.
-			 */
-			span.setTag(data.alias, true);
 		}
+		return span;
 	}
 	/*
 	 * This is used to implement toString() on the tagged object.
@@ -228,17 +261,16 @@ public class OwnerTrace<T> {
 		 * We are constructing a TreeMap in order to force display in sorted order.
 		 */
 		Map<String, Object> sorted = new TreeMap<>();
-		for (OwnerTraceData ancestor = data; ancestor != null; ancestor = ancestor.parent) {
+		for (Namespace ns : namespaces()) {
 			/*
 			 * Avoid race rules by reading the tags field only once.
 			 */
-			OwnerTag head = ancestor.tags;
+			OwnerTag head = ns.data.tags;
 			if (head != null) {
-				String prefix = ancestor.alias + ".";
 				for (OwnerTag tag = head; tag != null; tag = tag.next)
-					sorted.put(prefix + tag.key, tag.value);
+					sorted.put(ns.name + "." + tag.key, tag.value);
 			} else
-				sorted.put(ancestor.alias, true);
+				sorted.put(ns.name, true);
 		}
 		return target.getClass().getSimpleName() + sorted;
 	}
