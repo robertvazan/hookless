@@ -4,7 +4,6 @@ package com.machinezoo.hookless.util;
 import static java.util.stream.Collectors.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
-import java.util.stream.*;
 import com.google.common.cache.*;
 import io.opentracing.*;
 import it.unimi.dsi.fastutil.objects.*;
@@ -90,7 +89,15 @@ public class OwnerTrace<T> {
 		 * but it's much simpler to write it directly into the alias field as the default value.
 		 */
 		OwnerTraceData(Object target) {
-			alias = target.getClass().getSimpleName();
+			/*
+			 * Static objects are likely to have class as their parent, but we don't want just "Class" as an alias.
+			 * Class name is taken instead as an alias in that case. Since class name is used as default alias for instances too,
+			 * classes used in ownership chain as both instances and static classes will have to explicitly specify aliases.
+			 */
+			if (target instanceof Class)
+				alias = ((Class<?>)target).getSimpleName();
+			else
+				alias = target.getClass().getSimpleName();
 		}
 	}
 	/*
