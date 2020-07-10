@@ -166,17 +166,16 @@ public class OwnerTrace<T> {
 	 */
 	public Span fill(Span span) {
 		Objects.requireNonNull(span);
-		fill(data, span, false);
 		/*
 		 * If there are tag conflicts among ancestors, we can either prefer higher or lower ancestors.
 		 * We prefer higher ancestors, because they likely contain more recognizable context information.
 		 * This also makes it simpler to implement ancestor iteration.
 		 */
 		for (OwnerTraceData ancestor = data; ancestor != null; ancestor = ancestor.parent)
-			fill(ancestor, span, true);
+			fill(ancestor, span);
 		return span;
 	}
-	private static void fill(OwnerTraceData data, Span span, boolean prefixed) {
+	private static void fill(OwnerTraceData data, Span span) {
 		/*
 		 * Avoid race rules by reading the tags field only once.
 		 */
@@ -187,9 +186,9 @@ public class OwnerTrace<T> {
 			 * We could number such conflicting ancestors, but since such conflicts are rare and inconsequential,
 			 * we will be lazy, do the simplest (overwriting) implementation, and wait for the first bug report complaining about it.
 			 */
-			String prefix = prefixed ? data.alias + "." : null;
+			String prefix = data.alias + ".";
 			for (OwnerTag tag = head; tag != null; tag = tag.next) {
-				String key = prefix != null ? prefix + tag.key : tag.key;
+				String key = prefix + tag.key;
 				Object value = tag.value;
 				/*
 				 * Opentracing API only takes certain types of variables, so cast appropriately.
@@ -229,14 +228,7 @@ public class OwnerTrace<T> {
 		 * We are constructing a TreeMap in order to force display in sorted order.
 		 */
 		Map<String, Object> sorted = new TreeMap<>();
-		/*
-		 * If there are no tags, we don't add fallback any tag for the object itself like we do with ancestors,
-		 * because the fact that the target object is present is obvious from its classname
-		 * that is always included in toString() output.
-		 */
-		for (OwnerTag tag = data.tags; tag != null; tag = tag.next)
-			sorted.put(tag.key, tag.value);
-		for (OwnerTraceData ancestor = data.parent; ancestor != null; ancestor = ancestor.parent) {
+		for (OwnerTraceData ancestor = data; ancestor != null; ancestor = ancestor.parent) {
 			/*
 			 * Avoid race rules by reading the tags field only once.
 			 */
