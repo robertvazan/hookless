@@ -14,8 +14,9 @@ public class ReactiveBlockingExceptionTest {
 		e = new ReactiveBlockingException("message");
 		assertEquals("message", e.getMessage());
 		assertNull(e.getCause());
-		e = new ReactiveBlockingException(new ArithmeticException());
-		assertNull(e.getMessage());
+		ArithmeticException ae = new ArithmeticException();
+		e = new ReactiveBlockingException(ae);
+		assertEquals(ae.toString(), e.getMessage());
 		assertThat(e.getCause(), instanceOf(ArithmeticException.class));
 		e = new ReactiveBlockingException("message", new ArithmeticException());
 		assertEquals("message", e.getMessage());
