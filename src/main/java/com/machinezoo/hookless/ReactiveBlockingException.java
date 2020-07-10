@@ -6,7 +6,7 @@ package com.machinezoo.hookless;
  * <p>
  * Merely creating or throwing this exception is not sufficient to indicate blocking.
  * Current reactive computation must be explicitly marked as blocked before throwing
- * by calling {@link CurrentReactiveScope#block()} or {@link ReactiveScope#block()}.
+ * by calling {@link CurrentReactiveScope#block()}.
  * This class defines convenience {@link #block()} method and its overloads that
  * call {@link CurrentReactiveScope#block()} before throwing {@code ReactiveBlockingException}.
  * <p>
@@ -20,7 +20,6 @@ package com.machinezoo.hookless;
  * This exception type is provided as the most descriptive for cases of reactive blocking.
  * Its use is not mandatory though. Code that reactively blocks may throw any exception.
  * 
- * @see ReactiveValue#blocking()
  * @see ReactiveScope#block()
  * @see CurrentReactiveScope#block()
  */
@@ -90,7 +89,7 @@ public class ReactiveBlockingException extends RuntimeException {
 	 */
 	/**
 	 * Marks the current {@link ReactiveScope} as blocking and then throws {@code ReactiveBlockingException} with the specified message and cause.
-	 * Current reactive scope is blocked as if by calling {@link CurrentReactiveScope#block()}.
+	 * Current reactive scope is blocked by calling {@link CurrentReactiveScope#block()}.
 	 * <p>
 	 * This method always throws and thus never returns. Declared return type is just a convenience
 	 * that lets callers avoid unreachable code errors by placing the call in a {@code throw} statement,
@@ -110,7 +109,7 @@ public class ReactiveBlockingException extends RuntimeException {
 	}
 	/**
 	 * Marks the current {@link ReactiveScope} as blocking and then throws {@code ReactiveBlockingException} with the specified message.
-	 * Current reactive scope is blocked as if by calling {@link CurrentReactiveScope#block()}.
+	 * Current reactive scope is blocked by calling {@link CurrentReactiveScope#block()}.
 	 * <p>
 	 * This method always throws and thus never returns. Declared return type is just a convenience
 	 * that lets callers avoid unreachable code errors by placing the call in a {@code throw} statement,
@@ -127,7 +126,7 @@ public class ReactiveBlockingException extends RuntimeException {
 	}
 	/**
 	 * Marks the current {@link ReactiveScope} as blocking and then throws {@code ReactiveBlockingException} with the specified cause.
-	 * Current reactive scope is blocked as if by calling {@link CurrentReactiveScope#block()}.
+	 * Current reactive scope is blocked by calling {@link CurrentReactiveScope#block()}.
 	 * <p>
 	 * This method always throws and thus never returns. Declared return type is just a convenience
 	 * that lets callers avoid unreachable code errors by placing the call in a {@code throw} statement,
@@ -144,7 +143,7 @@ public class ReactiveBlockingException extends RuntimeException {
 	}
 	/**
 	 * Marks the current {@link ReactiveScope} as blocking and then throws {@code ReactiveBlockingException}.
-	 * Current reactive scope is blocked as if by calling {@link CurrentReactiveScope#block()}.
+	 * Current reactive scope is blocked by calling {@link CurrentReactiveScope#block()}.
 	 * <p>
 	 * This method always throws and thus never returns. Declared return type is just a convenience
 	 * that lets callers avoid unreachable code errors by placing the call in a {@code throw} statement,
