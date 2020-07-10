@@ -1,8 +1,10 @@
 // Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless.util;
 
+import static java.util.stream.Collectors.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
+import java.util.stream.*;
 import com.google.common.cache.*;
 import io.opentracing.*;
 import it.unimi.dsi.fastutil.objects.*;
@@ -212,40 +214,25 @@ public class OwnerTrace<T> {
 	 */
 	public Span fill(Span span) {
 		Objects.requireNonNull(span);
-		for (Namespace ns : namespaces()) {
-			/*
-			 * Avoid race rules by reading the tags field only once.
-			 */
-			OwnerTag head = ns.data.tags;
-			if (head != null) {
-				for (OwnerTag tag = head; tag != null; tag = tag.next) {
-					String key = ns.name + "." + tag.key;
-					Object value = tag.value;
-					/*
-					 * Opentracing API only takes certain types of variables, so cast appropriately.
-					 * We will convert arbitrary objects via toString(). This is a bit dangerous,
-					 * but callers are expected to be careful what are they setting as the tag value.
-					 */
-					if (value instanceof String)
-						span.setTag(key, (String)value);
-					else if (value instanceof Number)
-						span.setTag(key, (Number)value);
-					else if (value instanceof Boolean)
-						span.setTag(key, (boolean)value);
-					else
-						span.setTag(key, value.toString());
-				}
-			} else {
+		List<Namespace> namespaces = namespaces();
+		span.setTag("owner", namespaces.stream().map(ns -> ns.name).collect(joining(".")));
+		for (Namespace ns : namespaces) {
+			for (OwnerTag tag = ns.data.tags; tag != null; tag = tag.next) {
+				String key = ns.name + "." + tag.key;
+				Object value = tag.value;
 				/*
-				 * If there are no tags, then it wouldn't be apparent from the trace that this object is present.
-				 * We will therefore at least include its classname or alias if nothing else.
-				 * 
-				 * We could also force generation of ID tag at this point, but that's unnecessary,
-				 * because higher-level objects are expected to contain sufficient identifying information.
-				 * We just need to make ownership hierarchy apparent from the tags
-				 * and simple boolean will suffice for that purpose.
+				 * Opentracing API only takes certain types of variables, so cast appropriately.
+				 * We will convert arbitrary objects via toString(). This is a bit dangerous,
+				 * but callers are expected to be careful what are they setting as the tag value.
 				 */
-				span.setTag(ns.name, true);
+				if (value instanceof String)
+					span.setTag(key, (String)value);
+				else if (value instanceof Number)
+					span.setTag(key, (Number)value);
+				else if (value instanceof Boolean)
+					span.setTag(key, (boolean)value);
+				else
+					span.setTag(key, value.toString());
 			}
 		}
 		return span;
@@ -261,17 +248,10 @@ public class OwnerTrace<T> {
 		 * We are constructing a TreeMap in order to force display in sorted order.
 		 */
 		Map<String, Object> sorted = new TreeMap<>();
-		for (Namespace ns : namespaces()) {
-			/*
-			 * Avoid race rules by reading the tags field only once.
-			 */
-			OwnerTag head = ns.data.tags;
-			if (head != null) {
-				for (OwnerTag tag = head; tag != null; tag = tag.next)
-					sorted.put(ns.name + "." + tag.key, tag.value);
-			} else
-				sorted.put(ns.name, true);
-		}
-		return target.getClass().getSimpleName() + sorted;
+		List<Namespace> namespaces = namespaces();
+		for (Namespace ns : namespaces)
+			for (OwnerTag tag = ns.data.tags; tag != null; tag = tag.next)
+				sorted.put(ns.name + "." + tag.key, tag.value);
+		return namespaces.stream().map(ns -> ns.name).collect(joining(".")) + sorted;
 	}
 }
