@@ -51,12 +51,24 @@ public class ReactiveValue<T> {
 	}
 	/*
 	 * We also provide the opposite operation. Reactive value can capture value or exception and blocking flag.
-	 * Blocking flag is of course captured only if there is an active reactive scope.
 	 * 
 	 * We provide only capture from Supplier, because there is usually some value to capture.
 	 * Operations without result can have their exception and blocking captured by using Void result type.
 	 */
 	public static <T> ReactiveValue<T> capture(Supplier<T> supplier) {
+		if (ReactiveScope.current() != null)
+			return captureScoped(supplier);
+		else {
+			/*
+			 * Some code, especially tests, runs without reactive scope but still needs to capture blocking flag.
+			 * We will create temporary scope for such cases. Everything in the scope is discarded except the blocking flag.
+			 */
+			try (ReactiveScope.Computation computation = new ReactiveScope().enter()) {
+				return captureScoped(supplier);
+			}
+		}
+	}
+	private static <T> ReactiveValue<T> captureScoped(Supplier<T> supplier) {
 		try {
 			/*
 			 * Due to java evaluation order, blocking is checked only after the supplier runs.

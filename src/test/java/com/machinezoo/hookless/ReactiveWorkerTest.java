@@ -61,17 +61,17 @@ public class ReactiveWorkerTest extends TestBase {
 		// Blocking value is propagated as long as initial value is blocking (it is by default).
 		ReactiveVariable<String> v = new ReactiveVariable<>(new ReactiveValue<>("start", true));
 		ReactiveWorker<String> w = new ReactiveWorker<>(v::get);
-		await().until(() -> capture(w::get), equalTo(new ReactiveValue<>("start", true)));
+		await().until(() -> ReactiveValue.capture(w::get), equalTo(new ReactiveValue<>("start", true)));
 		// Further blocking values are also propagated.
 		v.value(new ReactiveValue<>("blocking", true));
-		await().until(() -> capture(w::get), equalTo(new ReactiveValue<>("blocking", true)));
+		await().until(() -> ReactiveValue.capture(w::get), equalTo(new ReactiveValue<>("blocking", true)));
 		// Blocking flag is cleared after first non-blocking computation.
 		v.set("nonblocking");
-		await().until(() -> capture(w::get), equalTo(new ReactiveValue<>("nonblocking")));
+		await().until(() -> ReactiveValue.capture(w::get), equalTo(new ReactiveValue<>("nonblocking")));
 		// After the first non-blocking result, all future blocking results are ignored.
 		v.value(new ReactiveValue<>("blocking again", true));
 		settle();
-		assertEquals(new ReactiveValue<>("nonblocking"), capture(w::get));
+		assertEquals(new ReactiveValue<>("nonblocking"), ReactiveValue.capture(w::get));
 	}
 	@RepeatFailedTest(10) public void initial() {
 		Supplier<String> s = () -> {
@@ -80,16 +80,16 @@ public class ReactiveWorkerTest extends TestBase {
 		};
 		// By default, ReactiveBlockingException is thrown before first value is available.
 		ReactiveWorker<String> w = new ReactiveWorker<>(s);
-		ReactiveValue<String> iv = capture(w::get);
+		ReactiveValue<String> iv = ReactiveValue.capture(w::get);
 		assertTrue(iv.blocking());
 		assertThat(iv.exception(), instanceOf(CompletionException.class));
 		assertThat(iv.exception().getCause(), instanceOf(ReactiveBlockingException.class));
 		// Initial value can be changed.
 		w = new ReactiveWorker<>(s).initial(new ReactiveValue<>("initial", true));
-		assertEquals(new ReactiveValue<>("initial", true), capture(w::get));
+		assertEquals(new ReactiveValue<>("initial", true), ReactiveValue.capture(w::get));
 		// Initial value is blocking by default.
 		w = new ReactiveWorker<>(s).initial("initial");
-		assertEquals(new ReactiveValue<>("initial", true), capture(w::get));
+		assertEquals(new ReactiveValue<>("initial", true), ReactiveValue.capture(w::get));
 		// Initial value cannot be changed once the worker is started.
 		ReactiveWorker<String> tw = new ReactiveWorker<>(s);
 		tw.initial("one");
@@ -102,7 +102,7 @@ public class ReactiveWorkerTest extends TestBase {
 			return v.get();
 		});
 		nw.initial(new ReactiveValue<>("initial"));
-		assertEquals(new ReactiveValue<>("initial"), capture(nw::get));
+		assertEquals(new ReactiveValue<>("initial"), ReactiveValue.capture(nw::get));
 		settle();
 		assertEquals("initial", nw.get());
 		// Non-blocking computed value will however replace any initial value.
@@ -159,9 +159,9 @@ public class ReactiveWorkerTest extends TestBase {
 		settle();
 		assertEquals(n, v.get());
 		// The next value read is marked as blocking, because the worker stopped updating it.
-		assertEquals(new ReactiveValue<>(n, true), capture(w::get));
+		assertEquals(new ReactiveValue<>(n, true), ReactiveValue.capture(w::get));
 		// Worker starts again and generates non-blocking output.
-		await().until(() -> !capture(w::get).blocking());
+		await().until(() -> !ReactiveValue.capture(w::get).blocking());
 	}
 	@Test public void executor() {
 		ReactiveWorker<ReactiveExecutor> w = new ReactiveWorker<>(() -> ReactiveExecutor.current());
