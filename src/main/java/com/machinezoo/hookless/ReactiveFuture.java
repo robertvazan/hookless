@@ -100,7 +100,8 @@ public class ReactiveFuture<T> {
 	 * so callers cannot compare the second reactive future to anything they know.
 	 */
 	private static final Map<CompletableFuture<?>, WeakReference<ReactiveFuture<?>>> associations = new WeakHashMap<>();
-	@SuppressWarnings("unchecked") public static synchronized <T> ReactiveFuture<T> wrap(CompletableFuture<T> completable) {
+	@SuppressWarnings("unchecked")
+	public static synchronized <T> ReactiveFuture<T> wrap(CompletableFuture<T> completable) {
 		Objects.requireNonNull(completable);
 		WeakReference<ReactiveFuture<?>> weak = associations.get(completable);
 		ReactiveFuture<?> cached = weak != null ? weak.get() : null;
@@ -212,7 +213,8 @@ public class ReactiveFuture<T> {
 		 */
 		return get(Duration.ofNanos(unit.toNanos(timeout)));
 	}
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		ReactiveValue<T> value = variable.value();
 		if (value.blocking())
 			CurrentReactiveScope.block();

@@ -47,7 +47,8 @@ public abstract class ReactiveDuration {
 	public static Duration between(Instant start, Instant end) {
 		return Duration.between(start, end);
 	}
-	@Override public boolean equals(Object obj) {
+	@Override
+	public boolean equals(Object obj) {
 		if (!(obj instanceof ReactiveDuration))
 			return false;
 		ReactiveDuration other = (ReactiveDuration)obj;
@@ -56,7 +57,8 @@ public abstract class ReactiveDuration {
 		clock.checkSame(other.clock);
 		return zero.equals(other.zero);
 	}
-	@Override public int hashCode() {
+	@Override
+	public int hashCode() {
 		return zero.hashCode();
 	}
 	public Duration truncatedTo(TemporalUnit unit) {

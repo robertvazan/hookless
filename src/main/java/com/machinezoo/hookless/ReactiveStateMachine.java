@@ -109,7 +109,8 @@ public class ReactiveStateMachine<T> {
 	 * because reads from reactive variables are unsynchronized (since reactive variable itself is synchronized)
 	 * and invalidation callback never executes concurrently with full advancement.
 	 */
-	@SuppressWarnings("resource") public synchronized void advance() {
+	@SuppressWarnings("resource")
+	public synchronized void advance() {
 		/*
 		 * Do not advance the state machine if it is still valid. This is a convenience to application code
 		 * that can now try to advance the state machine redundantly without it getting costly.
@@ -193,7 +194,8 @@ public class ReactiveStateMachine<T> {
 			valid.set(false);
 		}
 	}
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return OwnerTrace.of(this) + " = " + output.value();
 	}
 }

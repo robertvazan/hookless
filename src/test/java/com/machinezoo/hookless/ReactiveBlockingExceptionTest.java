@@ -7,7 +7,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.*;
 
 public class ReactiveBlockingExceptionTest {
-	@Test public void constructors() {
+	@Test
+	public void constructors() {
 		ReactiveBlockingException e = new ReactiveBlockingException();
 		assertNull(e.getMessage());
 		assertNull(e.getCause());
@@ -22,7 +23,8 @@ public class ReactiveBlockingExceptionTest {
 		assertEquals("message", e.getMessage());
 		assertThat(e.getCause(), instanceOf(ArithmeticException.class));
 	}
-	@Test public void block() {
+	@Test
+	public void block() {
 		// Merely calling the constructor does not block the current computation.
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			new ReactiveBlockingException();

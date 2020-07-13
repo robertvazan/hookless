@@ -9,80 +9,103 @@ public class ShrinkingReactiveDuration extends ReactiveDuration implements Compa
 	ShrinkingReactiveDuration(ReactiveClock clock, Instant zero) {
 		super(clock, zero);
 	}
-	@Override public int compareTo(ShrinkingReactiveDuration other) {
+	@Override
+	public int compareTo(ShrinkingReactiveDuration other) {
 		clock.checkSame(other.clock);
 		return zero.compareTo(other.zero);
 	}
-	@Override public int compareTo(Duration duration) {
+	@Override
+	public int compareTo(Duration duration) {
 		return -clock.compareTo(zero.minus(duration));
 	}
-	@Override public boolean isPositive() {
+	@Override
+	public boolean isPositive() {
 		return clock.isBefore(zero);
 	}
-	@Override public boolean isNegative() {
+	@Override
+	public boolean isNegative() {
 		return clock.isAfter(zero);
 	}
-	@Override public boolean isZero() {
+	@Override
+	public boolean isZero() {
 		return clock.isAt(zero);
 	}
-	@Override public ShrinkingReactiveDuration plus(Duration duration) {
+	@Override
+	public ShrinkingReactiveDuration plus(Duration duration) {
 		return new ShrinkingReactiveDuration(clock, zero.plus(duration));
 	}
 	public Duration plus(GrowingReactiveDuration other) {
 		return Duration.between(other.zero, zero);
 	}
-	@Override public ShrinkingReactiveDuration plus(long amount, TemporalUnit unit) {
+	@Override
+	public ShrinkingReactiveDuration plus(long amount, TemporalUnit unit) {
 		return plus(Duration.of(amount, unit));
 	}
-	@Override public ShrinkingReactiveDuration plusDays(long days) {
+	@Override
+	public ShrinkingReactiveDuration plusDays(long days) {
 		return plus(Duration.ofDays(days));
 	}
-	@Override public ShrinkingReactiveDuration plusHours(long hours) {
+	@Override
+	public ShrinkingReactiveDuration plusHours(long hours) {
 		return plus(Duration.ofHours(hours));
 	}
-	@Override public ShrinkingReactiveDuration plusMinutes(long minutes) {
+	@Override
+	public ShrinkingReactiveDuration plusMinutes(long minutes) {
 		return plus(Duration.ofMinutes(minutes));
 	}
-	@Override public ShrinkingReactiveDuration plusSeconds(long seconds) {
+	@Override
+	public ShrinkingReactiveDuration plusSeconds(long seconds) {
 		return plus(Duration.ofSeconds(seconds));
 	}
-	@Override public ShrinkingReactiveDuration plusMillis(long millis) {
+	@Override
+	public ShrinkingReactiveDuration plusMillis(long millis) {
 		return plus(Duration.ofMillis(millis));
 	}
-	@Override public ShrinkingReactiveDuration plusNanos(long nanos) {
+	@Override
+	public ShrinkingReactiveDuration plusNanos(long nanos) {
 		return plus(Duration.ofNanos(nanos));
 	}
-	@Override public ShrinkingReactiveDuration minus(Duration duration) {
+	@Override
+	public ShrinkingReactiveDuration minus(Duration duration) {
 		return plus(duration.negated());
 	}
 	public Duration minus(ShrinkingReactiveDuration other) {
 		return Duration.between(other.zero, zero);
 	}
-	@Override public ShrinkingReactiveDuration minus(long amount, TemporalUnit unit) {
+	@Override
+	public ShrinkingReactiveDuration minus(long amount, TemporalUnit unit) {
 		return minus(Duration.of(amount, unit));
 	}
-	@Override public ShrinkingReactiveDuration minusDays(long days) {
+	@Override
+	public ShrinkingReactiveDuration minusDays(long days) {
 		return minus(Duration.ofDays(days));
 	}
-	@Override public ShrinkingReactiveDuration minusHours(long hours) {
+	@Override
+	public ShrinkingReactiveDuration minusHours(long hours) {
 		return minus(Duration.ofHours(hours));
 	}
-	@Override public ShrinkingReactiveDuration minusMinutes(long minutes) {
+	@Override
+	public ShrinkingReactiveDuration minusMinutes(long minutes) {
 		return minus(Duration.ofMinutes(minutes));
 	}
-	@Override public ShrinkingReactiveDuration minusSeconds(long seconds) {
+	@Override
+	public ShrinkingReactiveDuration minusSeconds(long seconds) {
 		return minus(Duration.ofSeconds(seconds));
 	}
-	@Override public ShrinkingReactiveDuration minusMillis(long millis) {
+	@Override
+	public ShrinkingReactiveDuration minusMillis(long millis) {
 		return minus(Duration.ofMillis(millis));
 	}
-	@Override public ShrinkingReactiveDuration minusNanos(long nanos) {
+	@Override
+	public ShrinkingReactiveDuration minusNanos(long nanos) {
 		return minus(Duration.ofNanos(nanos));
 	}
-	@Override public GrowingReactiveDuration negated() {
+	@Override
+	public GrowingReactiveDuration negated() {
 		return new GrowingReactiveDuration(clock, zero);
 	}
-	@Override public Duration truncatedTo(Duration unit) {
+	@Override
+	public Duration truncatedTo(Duration unit) {
 		if (unit.isNegative() || unit.isZero())
 			throw new IllegalArgumentException("Can only truncate with positive unit");
 		Duration duration = Duration.between(clock.instant(), zero);
@@ -104,7 +127,8 @@ public class ShrinkingReactiveDuration extends ReactiveDuration implements Compa
 	public ReactiveInstant subtractFrom(Instant instant) {
 		return new ReactiveInstant(clock, Duration.between(zero, instant));
 	}
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return zero.toString() + " - now";
 	}
 }

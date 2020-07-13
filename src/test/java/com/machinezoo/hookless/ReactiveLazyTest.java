@@ -7,7 +7,8 @@ import java.util.concurrent.atomic.*;
 import org.junit.jupiter.api.*;
 
 public class ReactiveLazyTest {
-	@Test public void fresh() {
+	@Test
+	public void fresh() {
 		ReactiveVariable<String> a = new ReactiveVariable<>("hello");
 		ReactiveVariable<String> b = new ReactiveVariable<>("guys");
 		ReactiveLazy<String> l = new ReactiveLazy<>(() -> a.get() + " " + b.get());
@@ -19,7 +20,8 @@ public class ReactiveLazyTest {
 		b.set("gals");
 		assertEquals("hi gals", l.get());
 	}
-	@Test public void lazy() {
+	@Test
+	public void lazy() {
 		AtomicInteger n = new AtomicInteger();
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		// Supplier is not evaluated until first get().
@@ -47,7 +49,8 @@ public class ReactiveLazyTest {
 		}
 		assertEquals(3, n.get());
 	}
-	@Test public void reactive() {
+	@Test
+	public void reactive() {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		ReactiveLazy<String> l = new ReactiveLazy<>(() -> v.get());
 		try (ReactiveTrigger t = new ReactiveTrigger()) {

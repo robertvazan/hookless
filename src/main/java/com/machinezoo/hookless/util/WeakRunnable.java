@@ -30,7 +30,8 @@ public class WeakRunnable<T> implements Runnable {
 		weakref = new WeakReference<>(target);
 		this.method = method;
 	}
-	@Override public void run() {
+	@Override
+	public void run() {
 		T target = weakref.get();
 		if (target != null)
 			method.accept(target);

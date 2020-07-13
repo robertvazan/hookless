@@ -167,7 +167,8 @@ public class ReactiveThread {
 	/*
 	 * Suppress resource warnings caused by closeable trigger not being closed after being constructed.
 	 */
-	@SuppressWarnings("resource") private void iterate() {
+	@SuppressWarnings("resource")
+	private void iterate() {
 		ReactiveScope scope;
 		synchronized (this) {
 			/*
@@ -299,7 +300,8 @@ public class ReactiveThread {
 		}
 		pins = null;
 	}
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return OwnerTrace.of(this).toString();
 	}
 }

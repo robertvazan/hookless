@@ -80,7 +80,8 @@ public class ReactiveVariable<T> {
 		/*
 		 * Make version objects directly comparable.
 		 */
-		@Override public boolean equals(Object obj) {
+		@Override
+		public boolean equals(Object obj) {
 			if (this == obj)
 				return true;
 			if (obj == null || !(obj instanceof Version))
@@ -88,10 +89,12 @@ public class ReactiveVariable<T> {
 			Version other = (Version)obj;
 			return variable() == other.variable() && number == other.number;
 		}
-		@Override public int hashCode() {
+		@Override
+		public int hashCode() {
 			return Objects.hash(variable(), number);
 		}
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			return "Version " + number + " of " + variable;
 		}
 	}
@@ -248,7 +251,8 @@ public class ReactiveVariable<T> {
 	 * This check is implemented as a hash lookup. Providing fast hashCode() implementation speeds it up considerably.
 	 */
 	private final int hashCode = ThreadLocalRandom.current().nextInt();
-	@Override public int hashCode() {
+	@Override
+	public int hashCode() {
 		return hashCode;
 	}
 	/*
@@ -298,12 +302,14 @@ public class ReactiveVariable<T> {
 	 * This should be done even if the high-level object doesn't use weakrefs itself,
 	 * because weakrefs could be introduced at yet higher level.
 	 */
-	@SuppressWarnings("unused") private Object keepalive;
+	@SuppressWarnings("unused")
+	private Object keepalive;
 	public ReactiveVariable<T> keepalive(Object keepalive) {
 		this.keepalive = keepalive;
 		return this;
 	}
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return OwnerTrace.of(this) + " = " + value;
 	}
 }

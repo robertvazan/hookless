@@ -8,7 +8,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.*;
 
 public class ReactiveScopeTest {
-	@Test public void observeVariableAccess() {
+	@Test
+	public void observeVariableAccess() {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		ReactiveScope s = new ReactiveScope();
 		try (ReactiveScope.Computation c = s.enter()) {
@@ -16,7 +17,8 @@ public class ReactiveScopeTest {
 		}
 		assertThat(s.versions().stream().map(x -> x.variable()).collect(toList()), contains(v));
 	}
-	@Test public void nest() {
+	@Test
+	public void nest() {
 		ReactiveVariable<String> v1 = new ReactiveVariable<>("hello");
 		ReactiveVariable<String> v2 = new ReactiveVariable<>("world");
 		ReactiveScope s1 = new ReactiveScope();
@@ -31,7 +33,8 @@ public class ReactiveScopeTest {
 		assertThat(s1.versions().stream().map(v -> v.variable()).collect(toList()), contains(v1));
 		assertThat(s2.versions().stream().map(v -> v.variable()).collect(toList()), contains(v2));
 	}
-	@Test public void current() {
+	@Test
+	public void current() {
 		assertNull(ReactiveScope.current());
 		ReactiveScope s1 = new ReactiveScope();
 		ReactiveScope s2 = new ReactiveScope();
@@ -53,7 +56,8 @@ public class ReactiveScopeTest {
 		// Scope is current only until its computation is closed.
 		assertNull(ReactiveScope.current());
 	}
-	@Test public void keepFirstVersion() {
+	@Test
+	public void keepFirstVersion() {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			assertEquals("hello", v.get());
@@ -63,7 +67,8 @@ public class ReactiveScopeTest {
 			assertEquals(v.version() - 1, c.scope().versions().stream().findFirst().get().number());
 		}
 	}
-	@Test public void pickEarlierVersion() {
+	@Test
+	public void pickEarlierVersion() {
 		// Create a variable with lots of versions.
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		for (int i = 0; i < 10; ++i)
@@ -78,7 +83,8 @@ public class ReactiveScopeTest {
 		// Earliest version is kept regardless of insertion order.
 		assertEquals(2, s.versions().stream().findFirst().get().number());
 	}
-	@Test public void ignore() {
+	@Test
+	public void ignore() {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		try (ReactiveScope.Computation c1 = new ReactiveScope().enter()) {
 			assertEquals("hello", v.get());
@@ -90,7 +96,8 @@ public class ReactiveScopeTest {
 			assertThat(c1.scope().versions().stream().map(x -> x.variable()).collect(toList()), contains(v));
 		}
 	}
-	@Test public void block() {
+	@Test
+	public void block() {
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			// Scope is not blocked by default.
 			assertFalse(c.scope().blocked());
@@ -99,7 +106,8 @@ public class ReactiveScopeTest {
 			assertTrue(c.scope().blocked());
 		}
 	}
-	@Test public void nonblocking() {
+	@Test
+	public void nonblocking() {
 		try (ReactiveScope.Computation c1 = new ReactiveScope().enter()) {
 			// Attempting to block in a non-blocking inner scope has no effect on the outer scope.
 			try (ReactiveScope.Computation c2 = ReactiveScope.nonblocking()) {
@@ -108,7 +116,8 @@ public class ReactiveScopeTest {
 			assertFalse(c1.scope().blocked());
 		}
 	}
-	@Test public void freeze() {
+	@Test
+	public void freeze() {
 		ReactiveScope s = new ReactiveScope();
 		try (ReactiveScope.Computation c = s.enter()) {
 			// Evaluate the Supplier the first time around.
@@ -125,7 +134,8 @@ public class ReactiveScopeTest {
 			assertEquals("hi", s.freeze("key", () -> "other"));
 		}
 	}
-	@Test public void pin() {
+	@Test
+	public void pin() {
 		ReactiveScope s1 = new ReactiveScope();
 		try (ReactiveScope.Computation c = s1.enter()) {
 			// Within single scope, pins behave like freezes.

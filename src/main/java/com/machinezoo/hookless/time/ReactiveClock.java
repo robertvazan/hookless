@@ -36,17 +36,20 @@ class ReactiveClock implements Comparable<Instant> {
 	ReactiveInstant now() {
 		return new ReactiveInstant(this, Duration.ZERO);
 	}
-	@Override public boolean equals(Object obj) {
+	@Override
+	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
 		if (!(obj instanceof ReactiveClock))
 			return false;
 		return ((ReactiveClock)obj).now.equals(now);
 	}
-	@Override public int hashCode() {
+	@Override
+	public int hashCode() {
 		return now.hashCode();
 	}
-	@Override public int compareTo(Instant time) {
+	@Override
+	public int compareTo(Instant time) {
 		constrain(time);
 		if (now.isAfter(time))
 			return 1;
@@ -112,11 +115,13 @@ class ReactiveClock implements Comparable<Instant> {
 		 * Pregenerated hash code speeds up lookups in the pinned object map.
 		 */
 		final int hashCode = ThreadLocalRandom.current().nextInt();
-		@Override public int hashCode() {
+		@Override
+		public int hashCode() {
 			return hashCode;
 		}
 	}
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return OwnerTrace.of(this) + " = " + alarm;
 	}
 }

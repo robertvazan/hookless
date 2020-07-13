@@ -8,7 +8,8 @@ import java.util.concurrent.atomic.*;
 import org.junit.jupiter.api.*;
 
 public class ReactiveVariableTest {
-	@Test public void crud() {
+	@Test
+	public void crud() {
 		// Construct default.
 		ReactiveVariable<String> v = new ReactiveVariable<>();
 		assertNull(v.get());
@@ -24,7 +25,8 @@ public class ReactiveVariableTest {
 		v.set(null);
 		assertNull(v.get());
 	}
-	@Test public void versions() {
+	@Test
+	public void versions() {
 		// Versions are incremented by one after every write. First version is 1.
 		ReactiveVariable<String> v = new ReactiveVariable<>();
 		assertEquals(1, v.version());
@@ -33,7 +35,8 @@ public class ReactiveVariableTest {
 		v.set("world");
 		assertEquals(3, v.version());
 	}
-	@Test public void fireOnChange() {
+	@Test
+	public void fireOnChange() {
 		// The only way to listen to changes in the variable is to setup a trigger.
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		AtomicInteger c = new AtomicInteger();
@@ -51,7 +54,8 @@ public class ReactiveVariableTest {
 			assertEquals(1, c.get());
 		}
 	}
-	@Test public void trackAccess() {
+	@Test
+	public void trackAccess() {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		// Use ReactiveScope to detect variable access.
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
@@ -60,7 +64,8 @@ public class ReactiveVariableTest {
 			assertSame(v, c.scope().versions().stream().findFirst().get().variable());
 		}
 	}
-	@Test public void storeReactiveValue() {
+	@Test
+	public void storeReactiveValue() {
 		// Write and read the value.
 		assertEquals(new ReactiveValue<>("value"), new ReactiveVariable<>(new ReactiveValue<>("value")).value());
 		// Store ordinary value via ReactiveValue.
@@ -90,7 +95,8 @@ public class ReactiveVariableTest {
 			assertSame(v, c.scope().versions().stream().findFirst().get().variable());
 		}
 	}
-	@Test public void deduplicateWrites() {
+	@Test
+	public void deduplicateWrites() {
 		String s = "hello";
 		ReactiveVariable<String> v = new ReactiveVariable<>(s);
 		assertEquals(1, v.version());
@@ -100,7 +106,8 @@ public class ReactiveVariableTest {
 		assertEquals(1, v.version());
 		assertSame(s, v.get());
 	}
-	@Test public void disableEquality() {
+	@Test
+	public void disableEquality() {
 		String s1 = "hello";
 		String s2 = new String(s1);
 		ReactiveVariable<String> v = new ReactiveVariable<>(s1);

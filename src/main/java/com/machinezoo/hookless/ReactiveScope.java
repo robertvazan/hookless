@@ -74,11 +74,13 @@ public class ReactiveScope {
 		public abstract ReactiveScope scope();
 	}
 	private class ScopeComputation extends Computation {
-		@Override public void close() {
+		@Override
+		public void close() {
 			current.set(parent);
 			parent = null;
 		}
-		@Override public ReactiveScope scope() {
+		@Override
+		public ReactiveScope scope() {
 			return ReactiveScope.this;
 		}
 	}
@@ -97,10 +99,12 @@ public class ReactiveScope {
 		IgnoredComputation(ReactiveScope parent) {
 			this.parent = parent;
 		}
-		@Override public void close() {
+		@Override
+		public void close() {
 			current.set(parent);
 		}
-		@Override public ReactiveScope scope() {
+		@Override
+		public ReactiveScope scope() {
 			return null;
 		}
 	}
@@ -233,7 +237,8 @@ public class ReactiveScope {
 				computation = scope.enter();
 			}
 		}
-		@Override public void close() {
+		@Override
+		public void close() {
 			if (parent != null) {
 				computation.close();
 				/*
@@ -257,7 +262,8 @@ public class ReactiveScope {
 					parent.watch(version.variable(), version.number());
 			}
 		}
-		@Override public ReactiveScope scope() {
+		@Override
+		public ReactiveScope scope() {
 			return scope;
 		}
 	}
@@ -342,7 +348,8 @@ public class ReactiveScope {
 	public void pins(ReactivePins pins) {
 		this.pins = pins;
 	}
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return OwnerTrace.of(this).toString();
 	}
 }

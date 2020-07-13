@@ -279,15 +279,18 @@ public class ReactiveCollections {
 				.alias("iterator")
 				.parent(master);
 		}
-		@Override public boolean hasNext() {
+		@Override
+		public boolean hasNext() {
 			observe();
 			return inner.hasNext();
 		}
-		@Override public T next() {
+		@Override
+		public T next() {
 			observe();
 			return inner.next();
 		}
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			observe();
 			return OwnerTrace.of(this) + ": " + inner.toString();
 		}
@@ -314,7 +317,8 @@ public class ReactiveCollections {
 				.parent(master);
 			this.inner = inner;
 		}
-		@Override public boolean add(T item) {
+		@Override
+		public boolean add(T item) {
 			Objects.requireNonNull(item);
 			observeStatusAndException();
 			boolean changed;
@@ -326,7 +330,8 @@ public class ReactiveCollections {
 			invalidateIf(changed);
 			return silenceStatus(changed);
 		}
-		@Override public boolean addAll(Collection<? extends T> collection) {
+		@Override
+		public boolean addAll(Collection<? extends T> collection) {
 			for (T item : collection)
 				Objects.requireNonNull(item);
 			observeStatusAndException();
@@ -343,64 +348,78 @@ public class ReactiveCollections {
 			invalidateIf(changed);
 			return silenceStatus(changed);
 		}
-		@Override public void clear() {
+		@Override
+		public void clear() {
 			inner.clear();
 			invalidate();
 		}
-		@Override public boolean contains(Object item) {
+		@Override
+		public boolean contains(Object item) {
 			observe();
 			return inner.contains(item);
 		}
-		@Override public boolean containsAll(Collection<?> collection) {
+		@Override
+		public boolean containsAll(Collection<?> collection) {
 			observe();
 			return inner.containsAll(collection);
 		}
-		@Override public boolean equals(Object obj) {
+		@Override
+		public boolean equals(Object obj) {
 			observe();
 			return inner.equals(obj);
 		}
-		@Override public int hashCode() {
+		@Override
+		public int hashCode() {
 			observe();
 			return inner.hashCode();
 		}
-		@Override public boolean isEmpty() {
+		@Override
+		public boolean isEmpty() {
 			observe();
 			return inner.isEmpty();
 		}
-		@Override public Iterator<T> iterator() {
+		@Override
+		public Iterator<T> iterator() {
 			return new ReactiveIterator<>(this, inner.iterator());
 		}
-		@Override public boolean remove(Object item) {
+		@Override
+		public boolean remove(Object item) {
 			observeStatus();
 			boolean changed = inner.remove(item);
 			invalidateIf(changed);
 			return silenceStatus(changed);
 		}
-		@Override public boolean removeAll(Collection<?> collection) {
+		@Override
+		public boolean removeAll(Collection<?> collection) {
 			observeStatus();
 			boolean changed = inner.removeAll(collection);
 			invalidateIf(changed);
 			return silenceStatus(changed);
 		}
-		@Override public boolean retainAll(Collection<?> collection) {
+		@Override
+		public boolean retainAll(Collection<?> collection) {
 			observeStatus();
 			boolean changed = inner.retainAll(collection);
 			invalidateIf(changed);
 			return silenceStatus(changed);
 		}
-		@Override public int size() {
+		@Override
+		public int size() {
 			observe();
 			return inner.size();
 		}
-		@Override public Object[] toArray() {
+		@Override
+		public Object[] toArray() {
 			observe();
 			return inner.toArray();
 		}
-		@Override public <U extends Object> U[] toArray(U[] array) {
+		@Override
+		public <U extends Object> U[] toArray(U[] array) {
 			observe();
 			return inner.toArray(array);
 		}
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			observe();
 			return OwnerTrace.of(this) + ": " + inner;
 		}
@@ -419,7 +438,8 @@ public class ReactiveCollections {
 				.parent(master);
 			this.inner = inner;
 		}
-		@Override public boolean add(T item) {
+		@Override
+		public boolean add(T item) {
 			Objects.requireNonNull(item);
 			observeStatusAndException(item);
 			boolean changed;
@@ -431,7 +451,8 @@ public class ReactiveCollections {
 			invalidateIf(item, changed);
 			return silenceStatus(changed);
 		}
-		@Override public boolean addAll(Collection<? extends T> collection) {
+		@Override
+		public boolean addAll(Collection<? extends T> collection) {
 			for (T item : collection)
 				Objects.requireNonNull(item);
 			observeStatusAndException(collection);
@@ -448,64 +469,78 @@ public class ReactiveCollections {
 			invalidateIf(collection, changed);
 			return silenceStatus(changed);
 		}
-		@Override public void clear() {
+		@Override
+		public void clear() {
 			inner.clear();
 			invalidateAll();
 		}
-		@Override public boolean contains(Object item) {
+		@Override
+		public boolean contains(Object item) {
 			observe(item);
 			return inner.contains(item);
 		}
-		@Override public boolean containsAll(Collection<?> collection) {
+		@Override
+		public boolean containsAll(Collection<?> collection) {
 			observe(collection);
 			return inner.containsAll(collection);
 		}
-		@Override public boolean equals(Object obj) {
+		@Override
+		public boolean equals(Object obj) {
 			observe();
 			return inner.equals(obj);
 		}
-		@Override public int hashCode() {
+		@Override
+		public int hashCode() {
 			observe();
 			return inner.hashCode();
 		}
-		@Override public boolean isEmpty() {
+		@Override
+		public boolean isEmpty() {
 			observe();
 			return inner.isEmpty();
 		}
-		@Override public Iterator<T> iterator() {
+		@Override
+		public Iterator<T> iterator() {
 			return new ReactiveIterator<>(this, inner.iterator());
 		}
-		@Override public boolean remove(Object item) {
+		@Override
+		public boolean remove(Object item) {
 			observeStatus(item);
 			boolean changed = inner.remove(item);
 			invalidateIf(item, changed);
 			return silenceStatus(changed);
 		}
-		@Override public boolean removeAll(Collection<?> collection) {
+		@Override
+		public boolean removeAll(Collection<?> collection) {
 			observeStatus(collection);
 			boolean changed = inner.removeAll(collection);
 			invalidateIf(collection, changed);
 			return silenceStatus(changed);
 		}
-		@Override public boolean retainAll(Collection<?> collection) {
+		@Override
+		public boolean retainAll(Collection<?> collection) {
 			observeStatus();
 			boolean changed = inner.retainAll(collection);
 			invalidateAllIf(changed);
 			return silenceStatus(changed);
 		}
-		@Override public int size() {
+		@Override
+		public int size() {
 			observe();
 			return inner.size();
 		}
-		@Override public Object[] toArray() {
+		@Override
+		public Object[] toArray() {
 			observe();
 			return inner.toArray();
 		}
-		@Override public <U extends Object> U[] toArray(U[] array) {
+		@Override
+		public <U extends Object> U[] toArray(U[] array) {
 			observe();
 			return inner.toArray(array);
 		}
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			observe();
 			return OwnerTrace.of(this) + ": " + inner;
 		}
@@ -519,12 +554,14 @@ public class ReactiveCollections {
 				.alias("iterator")
 				.parent(master);
 		}
-		@Override public void add(T e) {
+		@Override
+		public void add(T e) {
 			Objects.requireNonNull(e);
 			inner.add(e);
 			invalidate();
 		}
-		@Override public boolean hasPrevious() {
+		@Override
+		public boolean hasPrevious() {
 			/*
 			 * Result of this method is predictable for ArrayList, thus no need to observe dependency,
 			 * but LinkedList can be modified during the lifetime of the iterator
@@ -535,31 +572,37 @@ public class ReactiveCollections {
 			observe();
 			return inner.hasPrevious();
 		}
-		@Override public int nextIndex() {
+		@Override
+		public int nextIndex() {
 			/*
 			 * LinkedList may have changing and thus unpredictable element offsets due to background modifications.
 			 */
 			observe();
 			return inner.nextIndex();
 		}
-		@Override public T previous() {
+		@Override
+		public T previous() {
 			observe();
 			return inner.previous();
 		}
-		@Override public int previousIndex() {
+		@Override
+		public int previousIndex() {
 			observe();
 			return inner.previousIndex();
 		}
-		@Override public void remove() {
+		@Override
+		public void remove() {
 			inner.remove();
 			invalidate();
 		}
-		@Override public void set(T e) {
+		@Override
+		public void set(T e) {
 			Objects.requireNonNull(e);
 			inner.set(e);
 			invalidate();
 		}
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			observe();
 			return OwnerTrace.of(this) + ": " + inner;
 		}
@@ -586,13 +629,15 @@ public class ReactiveCollections {
 				.parent(master);
 			this.inner = inner;
 		}
-		@Override public boolean add(T item) {
+		@Override
+		public boolean add(T item) {
 			Objects.requireNonNull(item);
 			inner.add(item);
 			invalidate();
 			return true;
 		}
-		@Override public void add(int index, T element) {
+		@Override
+		public void add(int index, T element) {
 			Objects.requireNonNull(element);
 			observeException();
 			try {
@@ -602,7 +647,8 @@ public class ReactiveCollections {
 			}
 			invalidate();
 		}
-		@Override public boolean addAll(Collection<? extends T> collection) {
+		@Override
+		public boolean addAll(Collection<? extends T> collection) {
 			for (T item : collection)
 				Objects.requireNonNull(item);
 			boolean changed = inner.addAll(collection);
@@ -612,7 +658,8 @@ public class ReactiveCollections {
 			 */
 			return changed;
 		}
-		@Override public boolean addAll(int index, Collection<? extends T> collection) {
+		@Override
+		public boolean addAll(int index, Collection<? extends T> collection) {
 			for (T item : collection)
 				Objects.requireNonNull(item);
 			observeException();
@@ -625,22 +672,27 @@ public class ReactiveCollections {
 			invalidateIf(changed);
 			return changed;
 		}
-		@Override public T get(int index) {
+		@Override
+		public T get(int index) {
 			observe();
 			return inner.get(index);
 		}
-		@Override public int indexOf(Object o) {
+		@Override
+		public int indexOf(Object o) {
 			observe();
 			return inner.indexOf(o);
 		}
-		@Override public int lastIndexOf(Object o) {
+		@Override
+		public int lastIndexOf(Object o) {
 			observe();
 			return inner.lastIndexOf(o);
 		}
-		@Override public ListIterator<T> listIterator() {
+		@Override
+		public ListIterator<T> listIterator() {
 			return new ReactiveListIterator<>(this, inner.listIterator());
 		}
-		@Override public ListIterator<T> listIterator(int index) {
+		@Override
+		public ListIterator<T> listIterator(int index) {
 			observeException();
 			try {
 				return new ReactiveListIterator<>(this, inner.listIterator(index));
@@ -648,7 +700,8 @@ public class ReactiveCollections {
 				throw silenceException(ex);
 			}
 		}
-		@Override public T remove(int index) {
+		@Override
+		public T remove(int index) {
 			observeStatusAndException();
 			T item;
 			try {
@@ -659,7 +712,8 @@ public class ReactiveCollections {
 			invalidate();
 			return silenceResult(item);
 		}
-		@Override public T set(int index, T element) {
+		@Override
+		public T set(int index, T element) {
 			Objects.requireNonNull(element);
 			observeStatusAndException();
 			T previous;
@@ -671,7 +725,8 @@ public class ReactiveCollections {
 			invalidateIfChanged(previous, element);
 			return silenceResult(previous);
 		}
-		@Override public List<T> subList(int fromIndex, int toIndex) {
+		@Override
+		public List<T> subList(int fromIndex, int toIndex) {
 			observeException();
 			try {
 				return new ReactiveList<>(inner.subList(fromIndex, toIndex), this);
@@ -679,7 +734,8 @@ public class ReactiveCollections {
 				throw silenceException(ex);
 			}
 		}
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			observe();
 			return OwnerTrace.of(this) + ": " + inner;
 		}
@@ -709,14 +765,16 @@ public class ReactiveCollections {
 				.parent(master);
 			this.inner = inner;
 		}
-		@Override public boolean add(T item) {
+		@Override
+		public boolean add(T item) {
 			Objects.requireNonNull(item);
 			observeStatus();
 			boolean changed = inner.add(item);
 			invalidateIf(changed);
 			return silenceStatus(changed);
 		}
-		@Override public boolean addAll(Collection<? extends T> collection) {
+		@Override
+		public boolean addAll(Collection<? extends T> collection) {
 			for (T item : collection)
 				Objects.requireNonNull(item);
 			observeStatus();
@@ -724,7 +782,8 @@ public class ReactiveCollections {
 			invalidateIf(changed);
 			return silenceStatus(changed);
 		}
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			observe();
 			return OwnerTrace.of(this) + ": " + inner;
 		}
@@ -743,14 +802,16 @@ public class ReactiveCollections {
 				.parent(master);
 			this.inner = inner;
 		}
-		@Override public boolean add(T item) {
+		@Override
+		public boolean add(T item) {
 			Objects.requireNonNull(item);
 			observeStatus(item);
 			boolean changed = inner.add(item);
 			invalidateIf(item, changed);
 			return silenceStatus(changed);
 		}
-		@Override public boolean addAll(Collection<? extends T> collection) {
+		@Override
+		public boolean addAll(Collection<? extends T> collection) {
 			for (T item : collection)
 				Objects.requireNonNull(item);
 			observeStatus(collection);
@@ -758,7 +819,8 @@ public class ReactiveCollections {
 			invalidateIf(collection, changed);
 			return silenceStatus(changed);
 		}
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			observe();
 			return OwnerTrace.of(this) + ": " + inner;
 		}
@@ -781,48 +843,59 @@ public class ReactiveCollections {
 			OwnerTrace.of(this).alias("map");
 			this.inner = inner;
 		}
-		@Override public void clear() {
+		@Override
+		public void clear() {
 			inner.clear();
 			invalidate();
 		}
-		@Override public boolean containsKey(Object key) {
+		@Override
+		public boolean containsKey(Object key) {
 			observe();
 			return inner.containsKey(key);
 		}
-		@Override public boolean containsValue(Object value) {
+		@Override
+		public boolean containsValue(Object value) {
 			observe();
 			return inner.containsValue(value);
 		}
-		@Override public Set<Entry<K, V>> entrySet() {
+		@Override
+		public Set<Entry<K, V>> entrySet() {
 			return new ReactiveSet<>(inner.entrySet(), this);
 		}
-		@Override public boolean equals(Object obj) {
+		@Override
+		public boolean equals(Object obj) {
 			observe();
 			return inner.equals(obj);
 		}
-		@Override public V get(Object key) {
+		@Override
+		public V get(Object key) {
 			observe();
 			return inner.get(key);
 		}
-		@Override public int hashCode() {
+		@Override
+		public int hashCode() {
 			observe();
 			return inner.hashCode();
 		}
-		@Override public boolean isEmpty() {
+		@Override
+		public boolean isEmpty() {
 			observe();
 			return inner.isEmpty();
 		}
-		@Override public Set<K> keySet() {
+		@Override
+		public Set<K> keySet() {
 			return new ReactiveSet<>(inner.keySet(), this);
 		}
-		@Override public V put(K key, V value) {
+		@Override
+		public V put(K key, V value) {
 			Objects.requireNonNull(value);
 			observeStatus();
 			V previous = inner.put(key, value);
 			invalidateIfChanged(previous, value);
 			return silenceResult(previous);
 		}
-		@Override public void putAll(Map<? extends K, ? extends V> m) {
+		@Override
+		public void putAll(Map<? extends K, ? extends V> m) {
 			if (!m.isEmpty()) {
 				for (V value : m.values())
 					Objects.requireNonNull(value);
@@ -830,20 +903,24 @@ public class ReactiveCollections {
 				invalidate();
 			}
 		}
-		@Override public V remove(Object key) {
+		@Override
+		public V remove(Object key) {
 			observeStatus();
 			V value = inner.remove(key);
 			invalidateIf(value != null);
 			return silenceResult(value);
 		}
-		@Override public int size() {
+		@Override
+		public int size() {
 			observe();
 			return inner.size();
 		}
-		@Override public Collection<V> values() {
+		@Override
+		public Collection<V> values() {
 			return new ReactiveCollection<>(inner.values(), this);
 		}
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			return OwnerTrace.of(this) + ": " + inner;
 		}
 	}
@@ -854,51 +931,62 @@ public class ReactiveCollections {
 			OwnerTrace.of(this).alias("map");
 			this.inner = inner;
 		}
-		@Override public void clear() {
+		@Override
+		public void clear() {
 			inner.clear();
 			invalidateAll();
 		}
-		@Override public boolean containsKey(Object key) {
+		@Override
+		public boolean containsKey(Object key) {
 			observe(key);
 			return inner.containsKey(key);
 		}
-		@Override public boolean containsValue(Object value) {
+		@Override
+		public boolean containsValue(Object value) {
 			observe();
 			return inner.containsValue(value);
 		}
-		@Override public Set<Entry<K, V>> entrySet() {
+		@Override
+		public Set<Entry<K, V>> entrySet() {
 			/*
 			 * Don't use ReactiveItemSet here, because entry objects != key objects. Per key reactivity won't work.
 			 */
 			return new ReactiveSet<>(inner.entrySet(), this);
 		}
-		@Override public boolean equals(Object obj) {
+		@Override
+		public boolean equals(Object obj) {
 			observe();
 			return inner.equals(obj);
 		}
-		@Override public V get(Object key) {
+		@Override
+		public V get(Object key) {
 			observe(key);
 			return inner.get(key);
 		}
-		@Override public int hashCode() {
+		@Override
+		public int hashCode() {
 			observe();
 			return inner.hashCode();
 		}
-		@Override public boolean isEmpty() {
+		@Override
+		public boolean isEmpty() {
 			observe();
 			return inner.isEmpty();
 		}
-		@Override public Set<K> keySet() {
+		@Override
+		public Set<K> keySet() {
 			return new ReactiveItemSet<>(inner.keySet(), this);
 		}
-		@Override public V put(K key, V value) {
+		@Override
+		public V put(K key, V value) {
 			Objects.requireNonNull(value);
 			observeStatus(key);
 			V previous = inner.put(key, value);
 			invalidateIfChanged(key, previous, value);
 			return silenceResult(previous);
 		}
-		@Override public void putAll(Map<? extends K, ? extends V> m) {
+		@Override
+		public void putAll(Map<? extends K, ? extends V> m) {
 			if (!m.isEmpty()) {
 				for (V value : m.values())
 					Objects.requireNonNull(value);
@@ -906,20 +994,24 @@ public class ReactiveCollections {
 				invalidate(m.keySet());
 			}
 		}
-		@Override public V remove(Object key) {
+		@Override
+		public V remove(Object key) {
 			observeStatus(key);
 			V value = inner.remove(key);
 			invalidateIf(key, value != null);
 			return silenceResult(value);
 		}
-		@Override public int size() {
+		@Override
+		public int size() {
 			observe();
 			return inner.size();
 		}
-		@Override public Collection<V> values() {
+		@Override
+		public Collection<V> values() {
 			return new ReactiveCollection<>(inner.values(), this);
 		}
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			observe();
 			return OwnerTrace.of(this) + ": " + inner;
 		}
@@ -944,28 +1036,33 @@ public class ReactiveCollections {
 			OwnerTrace.of(this).alias("queue");
 			this.inner = inner;
 		}
-		@Override public T element() {
+		@Override
+		public T element() {
 			observe();
 			return inner.element();
 		}
-		@Override public boolean offer(T item) {
+		@Override
+		public boolean offer(T item) {
 			Objects.requireNonNull(item);
 			observeStatus();
 			boolean changed = inner.offer(item);
 			invalidateIf(changed);
 			return silenceStatus(changed);
 		}
-		@Override public T peek() {
+		@Override
+		public T peek() {
 			observe();
 			return inner.peek();
 		}
-		@Override public T poll() {
+		@Override
+		public T poll() {
 			observeStatus();
 			T item = inner.poll();
 			invalidateIf(item != null);
 			return item;
 		}
-		@Override public T remove() {
+		@Override
+		public T remove() {
 			observeException();
 			T item;
 			try {
@@ -980,7 +1077,8 @@ public class ReactiveCollections {
 			invalidate();
 			return item;
 		}
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			observe();
 			return OwnerTrace.of(this) + ": " + inner;
 		}

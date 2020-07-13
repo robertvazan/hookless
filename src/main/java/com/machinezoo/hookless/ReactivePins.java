@@ -23,7 +23,8 @@ public class ReactivePins {
 	void parent(ReactivePins parent) {
 		this.parent = parent;
 	}
-	@SuppressWarnings("unchecked") public <T> T pin(Object key, Supplier<T> supplier) {
+	@SuppressWarnings("unchecked")
+	public <T> T pin(Object key, Supplier<T> supplier) {
 		Objects.requireNonNull(key);
 		Objects.requireNonNull(supplier);
 		for (ReactivePins ancestor = this; ancestor != null; ancestor = ancestor.parent) {
@@ -143,7 +144,8 @@ public class ReactivePins {
 		 */
 		valid = false;
 	}
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return getClass().getSimpleName() + ": " + (map != null ? map.toString() : "(empty)");
 	}
 }

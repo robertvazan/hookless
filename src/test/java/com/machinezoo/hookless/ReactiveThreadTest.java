@@ -11,10 +11,12 @@ import org.junit.jupiter.api.*;
 
 public class ReactiveThreadTest extends TestBase {
 	ReactiveThread t = new ReactiveThread();
-	@AfterEach public void stop() {
+	@AfterEach
+	public void stop() {
 		t.stop();
 	}
-	@Test public void reactive() {
+	@Test
+	public void reactive() {
 		AtomicInteger n = new AtomicInteger();
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		t = new ReactiveThread(() -> {
@@ -32,7 +34,8 @@ public class ReactiveThreadTest extends TestBase {
 		v.set("bye");
 		await().untilAtomic(n, equalTo(3));
 	}
-	@Test public void runnable() {
+	@Test
+	public void runnable() {
 		AtomicInteger n = new AtomicInteger();
 		// Thread's Runnable can be also supplied after constructor is called.
 		t.runnable(n::incrementAndGet);
@@ -45,18 +48,21 @@ public class ReactiveThreadTest extends TestBase {
 		assertThrows(NullPointerException.class, () -> new ReactiveThread(null));
 		assertThrows(NullPointerException.class, () -> new ReactiveThread().runnable(null));
 	}
-	@Test public void overridable() {
+	@Test
+	public void overridable() {
 		AtomicInteger n = new AtomicInteger();
 		// If no Runnable is provided, thread's run() method is called.
 		t = new ReactiveThread() {
-			@Override protected void run() {
+			@Override
+			protected void run() {
 				n.incrementAndGet();
 			}
 		};
 		t.start();
 		await().untilAtomic(n, equalTo(1));
 	}
-	@Test public void current() {
+	@Test
+	public void current() {
 		assertNull(ReactiveThread.current());
 		AtomicInteger n = new AtomicInteger();
 		t.runnable(() -> {
@@ -68,7 +74,8 @@ public class ReactiveThreadTest extends TestBase {
 		await().untilAtomic(n, equalTo(1));
 		assertNull(ReactiveThread.current());
 	}
-	@Test public void stoppable() {
+	@Test
+	public void stoppable() {
 		AtomicInteger n = new AtomicInteger();
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		t = new ReactiveThread(() -> {
@@ -84,7 +91,8 @@ public class ReactiveThreadTest extends TestBase {
 		settle();
 		assertEquals(1, n.get());
 	}
-	@Test public void states() {
+	@Test
+	public void states() {
 		AtomicInteger n = new AtomicInteger();
 		t = new ReactiveThread(n::incrementAndGet);
 		// It is safe to start the thread twice.
@@ -105,7 +113,8 @@ public class ReactiveThreadTest extends TestBase {
 		settle();
 		assertEquals(1, n.get());
 	}
-	@Test public void pinning() {
+	@Test
+	public void pinning() {
 		AtomicInteger n = new AtomicInteger();
 		ReactiveVariable<String> o = new ReactiveVariable<>();
 		Map<String, ReactiveVariable<String>> m = new HashMap<>();
@@ -144,7 +153,8 @@ public class ReactiveThreadTest extends TestBase {
 		await().untilAtomic(n, equalTo(7));
 		assertEquals("bye", o.get());
 	}
-	@Test public void blockingException() {
+	@Test
+	public void blockingException() {
 		ReactiveVariable<String> v = new ReactiveVariable<>(new ReactiveValue<>(new ReactiveBlockingException(), true));
 		ReactiveVariable<String> o = new ReactiveVariable<>();
 		t.runnable(() -> o.set(v.get()));
@@ -157,7 +167,8 @@ public class ReactiveThreadTest extends TestBase {
 		v.set("hello");
 		await().until(o::get, equalTo("hello"));
 	}
-	@Test public void nonblockingException() {
+	@Test
+	public void nonblockingException() {
 		ReactiveVariable<String> v = new ReactiveVariable<>("initial");
 		ReactiveVariable<String> o = new ReactiveVariable<>();
 		t.runnable(() -> o.set(v.get()));
@@ -173,7 +184,8 @@ public class ReactiveThreadTest extends TestBase {
 		assertEquals("handled", o.get());
 	}
 	volatile Object pressure;
-	@Test public void daemon() {
+	@Test
+	public void daemon() {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		ReactiveVariable<String> o = new ReactiveVariable<>();
 		// Daemon threads run normally like non-daemon threads as long as they are referenced.
@@ -188,7 +200,8 @@ public class ReactiveThreadTest extends TestBase {
 		while (w.get() != null)
 			pressure = Arrays.asList(pressure);
 	}
-	@Test public void executor() {
+	@Test
+	public void executor() {
 		AtomicReference<ReactiveExecutor> cx = new AtomicReference<>();
 		ReactiveThread t = new ReactiveThread(() -> cx.set(ReactiveExecutor.current()));
 		// Common reactive executor is used by default.

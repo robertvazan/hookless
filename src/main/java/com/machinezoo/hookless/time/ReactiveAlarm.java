@@ -34,7 +34,8 @@ class ReactiveAlarm {
 		else
 			return this;
 	}
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return "[" + (lower != null ? lower.toString() : "infinity") + ", " + (upper != null ? upper.toString() : "infinity") + ")";
 	}
 }

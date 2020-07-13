@@ -38,7 +38,8 @@ public class ReactiveFreezes {
 	 * It's a runtime check, so there could be some surprises at runtime,
 	 * but the structure of the API makes such bugs unlikely.
 	 */
-	@SuppressWarnings("unchecked") public <T> T freeze(Object key, Supplier<T> supplier) {
+	@SuppressWarnings("unchecked")
+	public <T> T freeze(Object key, Supplier<T> supplier) {
 		Objects.requireNonNull(key);
 		Objects.requireNonNull(supplier);
 		for (ReactiveFreezes ancestor = this; ancestor != null; ancestor = ancestor.parent) {
@@ -80,7 +81,8 @@ public class ReactiveFreezes {
 		} else if (map != null)
 			map.remove(key);
 	}
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return getClass().getSimpleName() + ": " + (map != null ? map.toString() : "(empty)");
 	}
 }

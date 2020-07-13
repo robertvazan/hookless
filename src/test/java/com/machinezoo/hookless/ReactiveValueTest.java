@@ -6,7 +6,8 @@ import java.util.concurrent.*;
 import org.junit.jupiter.api.*;
 
 public class ReactiveValueTest {
-	@Test public void constructors() {
+	@Test
+	public void constructors() {
 		// Main constructor.
 		ReactiveValue<String> v = new ReactiveValue<>("hello", null, false);
 		assertEquals("hello", v.result());
@@ -29,7 +30,8 @@ public class ReactiveValueTest {
 		v = new ReactiveValue<>(ex, true);
 		assertTrue(v.blocking());
 	}
-	@Test public void equals() {
+	@Test
+	public void equals() {
 		// Value equality, not reference equality.
 		String s1 = "hello";
 		String s2 = new String(s1);
@@ -40,7 +42,8 @@ public class ReactiveValueTest {
 		// Compare blocking flag.
 		assertNotEquals(new ReactiveValue<>(s1, true), new ReactiveValue<>(s2, false));
 	}
-	@Test public void equalsForExceptions() {
+	@Test
+	public void equalsForExceptions() {
 		// This has to be done in a loop, because two separate exception initializations would differ in line numbers.
 		Throwable[] same = new Throwable[2];
 		for (int i = 0; i < 2; ++i)
@@ -58,7 +61,8 @@ public class ReactiveValueTest {
 			named[i] = new RuntimeException("Test exception " + (i + 1));
 		assertNotEquals(new ReactiveValue<>(named[0]), new ReactiveValue<>(named[1]));
 	}
-	@Test public void same() {
+	@Test
+	public void same() {
 		// Reference equality, not value equality.
 		String s = "hello";
 		assertFalse(new ReactiveValue<>(s).same(new ReactiveValue<>(new String(s))));
@@ -72,7 +76,8 @@ public class ReactiveValueTest {
 		assertTrue(new ReactiveValue<>(ex[0]).same(new ReactiveValue<>(ex[0])));
 		assertFalse(new ReactiveValue<>(ex[0]).same(new ReactiveValue<>(ex[1])));
 	}
-	@Test public void unpack() {
+	@Test
+	public void unpack() {
 		assertEquals("hello", new ReactiveValue<>("hello").get());
 		// Exceptions are wrapped.
 		RuntimeException ex = new RuntimeException();
@@ -84,7 +89,8 @@ public class ReactiveValueTest {
 			assertTrue(c.scope().blocked());
 		}
 	}
-	@Test public void pack() {
+	@Test
+	public void pack() {
 		// Capture simple value.
 		assertEquals(new ReactiveValue<>("hello"), ReactiveValue.capture(() -> "hello"));
 		// Capture exception.

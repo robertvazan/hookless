@@ -15,7 +15,8 @@ public class ReactiveInstant implements Comparable<ReactiveInstant> {
 	public static ReactiveInstant now() {
 		return ReactiveClock.get().now();
 	}
-	@Override public boolean equals(Object obj) {
+	@Override
+	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
 		else if (obj instanceof ReactiveInstant) {
@@ -27,10 +28,12 @@ public class ReactiveInstant implements Comparable<ReactiveInstant> {
 		else
 			return false;
 	}
-	@Override public int hashCode() {
+	@Override
+	public int hashCode() {
 		return shift.hashCode();
 	}
-	@Override public int compareTo(ReactiveInstant other) {
+	@Override
+	public int compareTo(ReactiveInstant other) {
 		clock.checkSame(other.clock);
 		return shift.compareTo(other.shift);
 	}
@@ -131,7 +134,8 @@ public class ReactiveInstant implements Comparable<ReactiveInstant> {
 	public long until(ReactiveInstant end, TemporalUnit unit) {
 		return until(end, unit.getDuration());
 	}
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return "now + " + shift.toString();
 	}
 }

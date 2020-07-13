@@ -18,7 +18,8 @@ import org.junitpioneer.jupiter.*;
 import com.google.common.util.concurrent.*;
 
 public class ReactiveFurureTest extends TestBase {
-	@Test public void wrap() {
+	@Test
+	public void wrap() {
 		// Any CompletableFuture can be wrapped.
 		CompletableFuture<String> cf = new CompletableFuture<>();
 		ReactiveFuture<String> rf = ReactiveFuture.wrap(cf);
@@ -26,14 +27,16 @@ public class ReactiveFurureTest extends TestBase {
 		// Wrapping the same CompletableFuture always returns the same ReactiveFuture.
 		assertSame(rf, ReactiveFuture.wrap(cf));
 	}
-	@Test public void create() {
+	@Test
+	public void create() {
 		// ReactiveFuture can also construct its own CompletableFuture if none is provided explicitly.
 		ReactiveFuture<String> rf = new ReactiveFuture<>();
 		assertNotNull(rf.completable());
 		// Wrapping the CompletableFuture just returns the ReactiveFuture that created it.
 		assertSame(rf, ReactiveFuture.wrap(rf.completable()));
 	}
-	@Test public void waiting() {
+	@Test
+	public void waiting() {
 		ReactiveFuture<String> rf = new ReactiveFuture<>();
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			// State checks are negative without any blocking.
@@ -48,7 +51,8 @@ public class ReactiveFurureTest extends TestBase {
 			assertTrue(CurrentReactiveScope.blocked());
 		}
 	}
-	@Test public void done() {
+	@Test
+	public void done() {
 		ReactiveFuture<String> rf = ReactiveFuture.wrap(CompletableFuture.completedFuture("hello"));
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			assertTrue(rf.done());
@@ -66,7 +70,8 @@ public class ReactiveFurureTest extends TestBase {
 		CompletionException ce = assertThrows(CompletionException.class, runnable::run);
 		assertThat(ce.getCause(), instanceOf(clazz));
 	}
-	@Test public void failed() {
+	@Test
+	public void failed() {
 		ReactiveFuture<String> rf = new ReactiveFuture<>();
 		rf.completable().completeExceptionally(new ArithmeticException());
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
@@ -81,7 +86,8 @@ public class ReactiveFurureTest extends TestBase {
 			assertFalse(CurrentReactiveScope.blocked());
 		}
 	}
-	@Test public void cancelled() {
+	@Test
+	public void cancelled() {
 		ReactiveFuture<String> rf = new ReactiveFuture<>();
 		rf.completable().cancel(false);
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
@@ -96,7 +102,8 @@ public class ReactiveFurureTest extends TestBase {
 			assertFalse(CurrentReactiveScope.blocked());
 		}
 	}
-	@RepeatedTest(3) public void timeout() {
+	@RepeatedTest(3)
+	public void timeout() {
 		ReactiveFuture<String> rf = new ReactiveFuture<>();
 		// Timeout overloads initially reactively block.
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
@@ -128,7 +135,9 @@ public class ReactiveFurureTest extends TestBase {
 			Arguments.of("failed", (Consumer<CompletableFuture<String>>)(f -> f.completeExceptionally(new ArithmeticException()))),
 			Arguments.of("cancelled", (Consumer<CompletableFuture<String>>)(f -> f.cancel(false))));
 	}
-	@ParameterizedTest @MethodSource("completers") public void reactive(String name, Consumer<CompletableFuture<String>> completer) {
+	@ParameterizedTest
+	@MethodSource("completers")
+	public void reactive(String name, Consumer<CompletableFuture<String>> completer) {
 		ReactiveFuture<String> rf = new ReactiveFuture<>();
 		// Watch all methods of the reactive future.
 		List<ReactiveStateMachine<?>> sms = new ArrayList<>();
@@ -155,7 +164,8 @@ public class ReactiveFurureTest extends TestBase {
 		for (ReactiveStateMachine<?> sm : sms)
 			assertTrue(sm.valid());
 	}
-	@RepeatFailedTest(10) public void reactiveTimeout() {
+	@RepeatFailedTest(10)
+	public void reactiveTimeout() {
 		Function<ReactiveFuture<String>, String> m1 = f -> f.get(Duration.ofMillis(50));
 		Function<ReactiveFuture<String>, String> m2 = f -> f.get(50, TimeUnit.MILLISECONDS);
 		for (Function<ReactiveFuture<String>, String> m : Arrays.asList(m1, m2)) {
@@ -176,7 +186,8 @@ public class ReactiveFurureTest extends TestBase {
 			assertFalse(sm.valid());
 		}
 	}
-	@Test public void supplyReactive() {
+	@Test
+	public void supplyReactive() {
 		ReactiveVariable<String> v = new ReactiveVariable<>(new ReactiveValue<>("pending", true));
 		CompletableFuture<String> f = ReactiveFuture.supplyReactive(v::get);
 		// The future is not completed when the supplier is blocking.
@@ -201,7 +212,8 @@ public class ReactiveFurureTest extends TestBase {
 		ExecutionException ex = assertThrows(ExecutionException.class, f::get);
 		assertThat(ex.getCause(), instanceOf(ArithmeticException.class));
 	}
-	@Test public void runReactive() {
+	@Test
+	public void runReactive() {
 		AtomicInteger n = new AtomicInteger();
 		ReactiveVariable<String> v = new ReactiveVariable<>(new ReactiveValue<>("pending", true));
 		CompletableFuture<Void> f = ReactiveFuture.runReactive(() -> {
@@ -221,7 +233,8 @@ public class ReactiveFurureTest extends TestBase {
 		settle();
 		assertEquals(2, n.get());
 	}
-	@Test public void supplyReactiveExecutor() {
+	@Test
+	public void supplyReactiveExecutor() {
 		ReactiveExecutor x = new ReactiveExecutor();
 		// Custom executor can be specified.
 		CompletableFuture<ReactiveExecutor> f = ReactiveFuture.supplyReactive(() -> ReactiveExecutor.current(), x);
@@ -229,7 +242,8 @@ public class ReactiveFurureTest extends TestBase {
 		assertSame(x, f.join());
 		x.shutdown();
 	}
-	@Test public void runReactiveExecutor() {
+	@Test
+	public void runReactiveExecutor() {
 		AtomicReference<ReactiveExecutor> cx = new AtomicReference<>();
 		ReactiveExecutor x = new ReactiveExecutor();
 		// Custom executor can be specified.

@@ -248,7 +248,8 @@ public class OwnerTrace<T> {
 	 * This is used to implement toString() on the tagged object.
 	 * The logic is the same as in fill() method.
 	 */
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		/*
 		 * Just materializing the complete tag map is the simplest implementation.
 		 * This is not performance-critical code, so we aim for code simplicity rather than performance.

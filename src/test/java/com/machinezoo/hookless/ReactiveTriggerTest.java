@@ -7,7 +7,8 @@ import java.util.concurrent.atomic.*;
 import org.junit.jupiter.api.*;
 
 public class ReactiveTriggerTest {
-	@Test public void states() {
+	@Test
+	public void states() {
 		try (ReactiveTrigger t = new ReactiveTrigger()) {
 			// Initial state.
 			assertFalse(t.armed());
@@ -30,7 +31,8 @@ public class ReactiveTriggerTest {
 			assertTrue(t.closed());
 		}
 	}
-	@Test public void callback() {
+	@Test
+	public void callback() {
 		try (ReactiveTrigger t = new ReactiveTrigger()) {
 			AtomicInteger n = new AtomicInteger(0);
 			t.callback(n::incrementAndGet);
@@ -45,7 +47,8 @@ public class ReactiveTriggerTest {
 			assertEquals(1, n.get());
 		}
 	}
-	@Test public void fireOnVariableChange() {
+	@Test
+	public void fireOnVariableChange() {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		AtomicInteger n = new AtomicInteger(0);
 		try (ReactiveTrigger t = new ReactiveTrigger()) {
@@ -60,7 +63,8 @@ public class ReactiveTriggerTest {
 			assertEquals(1, n.get());
 		}
 	}
-	@Test public void closeAtAnyTime() {
+	@Test
+	public void closeAtAnyTime() {
 		AtomicInteger n = new AtomicInteger(0);
 		// Closing before arming disables arming and causes firing to be ignored.
 		try (ReactiveTrigger t = new ReactiveTrigger()) {
@@ -87,7 +91,8 @@ public class ReactiveTriggerTest {
 			assertEquals(0, n.get());
 		}
 	}
-	@Test public void watchManyVariables() {
+	@Test
+	public void watchManyVariables() {
 		ReactiveVariable<String> v1 = new ReactiveVariable<>("a");
 		ReactiveVariable<String> v2 = new ReactiveVariable<>("b");
 		ReactiveVariable<String> v3 = new ReactiveVariable<>("c");
@@ -105,7 +110,8 @@ public class ReactiveTriggerTest {
 			assertEquals(1, n.get());
 		}
 	}
-	@Test public void fireImmediately() {
+	@Test
+	public void fireImmediately() {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		AtomicInteger n = new AtomicInteger(0);
 		try (ReactiveTrigger t = new ReactiveTrigger()) {
@@ -119,7 +125,8 @@ public class ReactiveTriggerTest {
 			assertEquals(1, n.get());
 		}
 	}
-	@Test public void fireUnarmed() {
+	@Test
+	public void fireUnarmed() {
 		try (ReactiveTrigger t = new ReactiveTrigger()) {
 			// It is possible to fire an unarmed trigger, but it probably isn't useful.
 			t.fire();

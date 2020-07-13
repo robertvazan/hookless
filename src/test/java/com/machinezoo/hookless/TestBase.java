@@ -7,7 +7,8 @@ import org.junit.jupiter.api.*;
 import com.machinezoo.noexception.*;
 
 public abstract class TestBase {
-	@BeforeAll public static void awaitility() {
+	@BeforeAll
+	public static void awaitility() {
 		setDefaultPollInterval(new FibonacciPollInterval());
 	}
 	public static void sleep(int millis) {

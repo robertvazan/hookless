@@ -258,7 +258,8 @@ public class ReactiveWorker<T> implements Supplier<T> {
 	/*
 	 * Synchronized to ensure correct state transitions for output+ping+ack trio.
 	 */
-	@Override public synchronized T get() {
+	@Override
+	public synchronized T get() {
 		/*
 		 * Start the reactive thread on first access.
 		 */
@@ -273,7 +274,8 @@ public class ReactiveWorker<T> implements Supplier<T> {
 		ack.set(ping.get());
 		return output.get();
 	}
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return OwnerTrace.of(this) + " = " + output.value();
 	}
 }

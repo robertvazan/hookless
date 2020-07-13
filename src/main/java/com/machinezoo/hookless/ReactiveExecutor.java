@@ -69,13 +69,15 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 			 */
 			sample = executor == common ? Timer.start() : null;
 		}
-		@Override public int compareTo(ReactiveTask other) {
+		@Override
+		public int compareTo(ReactiveTask other) {
 			if (eventId != other.eventId)
 				return eventId < other.eventId ? -1 : 1;
 			else
 				return Long.compare(taskId, other.taskId);
 		}
-		@Override public void run() {
+		@Override
+		public void run() {
 			/*
 			 * While incrementing task ID is straightforward, we have several options as to when to increment event ID.
 			 * Here we increment it when the first task of the current event starts execution.
@@ -90,7 +92,7 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 			 * This kind of inefficiency is also present when we have only two events (current and the next one),
 			 * but its impact on throughput is tolerable when there are only two active events.
 			 * Normal FIFO queue of ThreadPoolExecutor would eliminate all such inefficiency,
-			 * but reactive executor is designed to reduce latency and we are willing to sacrifice some throughput for it.  
+			 * but reactive executor is designed to reduce latency and we are willing to sacrifice some throughput for it.
 			 */
 			executor.eventCounter.compareAndSet(eventId, eventId + 1);
 			/*
@@ -137,7 +139,8 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 	/*
 	 * We could also override newTaskFor(), but then tasks submitted directly via execute() would not be wrapped.
 	 */
-	@Override public void execute(Runnable runnable) {
+	@Override
+	public void execute(Runnable runnable) {
 		Objects.requireNonNull(runnable);
 		ReactiveTask current = running.get();
 		/*
@@ -157,7 +160,8 @@ public class ReactiveExecutor extends ThreadPoolExecutor {
 	 * This executor will be compute-optimized with thread count equal to core count. Submitting blocking operations here will undermine performance.
 	 */
 	private static final ReactiveExecutor common = new ReactiveExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-		@Override public Thread newThread(Runnable runnable) {
+		@Override
+		public Thread newThread(Runnable runnable) {
 			Thread thread = new Thread(runnable);
 			/*
 			 * Do not block process termination just because some reactive computations are still running in the background.

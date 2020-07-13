@@ -13,7 +13,8 @@ class AlarmScheduler {
 	static final AlarmScheduler instance = new AlarmScheduler();
 	private static final Duration poll = Duration.ofSeconds(1);
 	private static final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-		@Override public Thread newThread(Runnable runnable) {
+		@Override
+		public Thread newThread(Runnable runnable) {
 			Thread thread = new Thread(runnable);
 			thread.setDaemon(true);
 			thread.setName("hookless-timing");
@@ -53,11 +54,11 @@ class AlarmScheduler {
 		 * We want to invalidate alarms that don't have fresh in [lower,upper).
 		 * Consider two cases:
 		 * 1. fresh > now:
-		 *    We want to invalidate alarms with fresh in range [upper,inf).
-		 *    That means upper is in range (now,fresh].
+		 * We want to invalidate alarms with fresh in range [upper,inf).
+		 * That means upper is in range (now,fresh].
 		 * 2. fresh < now:
-		 *    We want to invalidate alarms with fresh in range (inf,lower).
-		 *    That means lower is in range (fresh,now].
+		 * We want to invalidate alarms with fresh in range (inf,lower).
+		 * That means lower is in range (fresh,now].
 		 * Since SortedSet performs lookups in ranges like [from,to),
 		 * we have to modify the above ranges to [now+1,fresh+1) and [fresh+1,now+1) respectively.
 		 */

@@ -10,7 +10,8 @@ import org.junit.jupiter.api.*;
 public class ReactiveFreezesTest {
 	private final ReactiveFreezes f = new ReactiveFreezes();
 	// State of ReactiveFreezes can be manipulated explicitly and fully observed.
-	@Test public void explicit() {
+	@Test
+	public void explicit() {
 		assertThat(f.keys(), is(empty()));
 		assertNull(f.get("key"));
 		f.set("key", new ReactiveValue<>("value"));
@@ -23,14 +24,16 @@ public class ReactiveFreezesTest {
 		assertNull(f.get("key"));
 	}
 	// However, the usual way to use ReactiveFreezes is to call freeze().
-	@Test public void freeze() {
+	@Test
+	public void freeze() {
 		assertEquals("value", f.freeze("key", () -> "value"));
 		assertThat(f.keys(), contains("key"));
 		// The Supplier is not called second time.
 		assertEquals("value", f.freeze("key", () -> "other"));
 	}
 	// If the Supplier throws, the exception is also frozen.
-	@Test public void exception() {
+	@Test
+	public void exception() {
 		// ReactiveValue wraps all exceptions in CompletionException.
 		CompletionException ce = assertThrows(CompletionException.class, () -> f.freeze("key", () -> {
 			throw new ArithmeticException();
@@ -44,7 +47,8 @@ public class ReactiveFreezesTest {
 		assertThat(ce.getCause(), instanceOf(ArithmeticException.class));
 	}
 	// Frozen ReactiveValue of course includes the blocking flag.
-	@Test public void captureBlocking() {
+	@Test
+	public void captureBlocking() {
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			assertEquals("value", f.freeze("key", () -> {
 				CurrentReactiveScope.block();
@@ -56,7 +60,8 @@ public class ReactiveFreezesTest {
 	}
 	// If the frozen value is marked as blocking for whatever reason, the blocking flag is propagated into the current computation.
 	// This is a contrived example using explicit manipulation API. See below for a realistic example.
-	@Test public void propagateBlocking() {
+	@Test
+	public void propagateBlocking() {
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			f.set("key", new ReactiveValue<>("value", true));
 			assertFalse(c.scope().blocked());
@@ -65,7 +70,8 @@ public class ReactiveFreezesTest {
 		}
 	}
 	// This is a realistic example of blocking flag propagation.
-	@Test public void blockingScenario() {
+	@Test
+	public void blockingScenario() {
 		// Consider two nested scopes. The inner one is non-blocking. The two share one ReactiveFreezes object.
 		try (ReactiveScope.Computation c1 = new ReactiveScope().enter()) {
 			try (ReactiveScope.Computation c2 = ReactiveScope.nonblocking()) {
@@ -83,7 +89,8 @@ public class ReactiveFreezesTest {
 			assertTrue(CurrentReactiveScope.blocked());
 		}
 	}
-	@Test public void inheritance() {
+	@Test
+	public void inheritance() {
 		ReactiveFreezes gp = new ReactiveFreezes();
 		gp.set("X", new ReactiveValue<>("X in grandparent"));
 		gp.set("Y", new ReactiveValue<>("Y in grandparent"));

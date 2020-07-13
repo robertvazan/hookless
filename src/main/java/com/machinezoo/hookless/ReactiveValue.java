@@ -206,7 +206,8 @@ public class ReactiveValue<T> {
 	 * @see #same(ReactiveValue)
 	 * @see #hashCode()
 	 */
-	@Override public boolean equals(Object obj) {
+	@Override
+	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null || !(obj instanceof ReactiveValue))
@@ -237,7 +238,8 @@ public class ReactiveValue<T> {
 	 * 
 	 * @see #equals(Object)
 	 */
-	@Override public int hashCode() {
+	@Override
+	public int hashCode() {
 		/*
 		 * Reactive value is unlikely to be used as a hash key. We are free to make this inefficient.
 		 */
@@ -284,7 +286,8 @@ public class ReactiveValue<T> {
 	 * 
 	 * @return string representation of this {@code ReactiveValue}
 	 */
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return (exception == null ? Objects.toString(result) : exception.toString()) + (blocking ? " [blocking]" : "");
 	}
 	/*

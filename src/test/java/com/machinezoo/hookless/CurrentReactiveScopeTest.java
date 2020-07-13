@@ -5,7 +5,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.*;
 
 public class CurrentReactiveScopeTest {
-	@Test public void block() {
+	@Test
+	public void block() {
 		// Propagate blocking to the current scope.
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			CurrentReactiveScope.block();
@@ -14,7 +15,8 @@ public class CurrentReactiveScopeTest {
 		// No effect and no exception outside of any scope.
 		CurrentReactiveScope.block();
 	}
-	@Test public void blocked() {
+	@Test
+	public void blocked() {
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			// Read blocking state from the current scope.
 			assertFalse(CurrentReactiveScope.blocked());
@@ -24,7 +26,8 @@ public class CurrentReactiveScopeTest {
 		// Default to false outside of any scope.
 		assertFalse(CurrentReactiveScope.blocked());
 	}
-	@Test public void freeze() {
+	@Test
+	public void freeze() {
 		// Propagate freeze() call to the current scope.
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			assertEquals("value", CurrentReactiveScope.freeze("key", () -> "value"));
@@ -35,7 +38,8 @@ public class CurrentReactiveScopeTest {
 		assertEquals("one", CurrentReactiveScope.freeze("key", () -> "one"));
 		assertEquals("two", CurrentReactiveScope.freeze("key", () -> "two"));
 	}
-	@Test public void pin() {
+	@Test
+	public void pin() {
 		// Propagate pin() call to the current scope.
 		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
 			assertEquals("value", CurrentReactiveScope.pin("key", () -> "value"));

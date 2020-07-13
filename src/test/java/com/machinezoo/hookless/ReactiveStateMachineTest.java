@@ -10,7 +10,8 @@ import java.util.function.*;
 import org.junit.jupiter.api.*;
 
 public class ReactiveStateMachineTest {
-	@Test public void initial() {
+	@Test
+	public void initial() {
 		// When initial value is provided, it is returned regardless of the supplier output.
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		ReactiveStateMachine<String> sm = ReactiveStateMachine.supply(new ReactiveValue<>("hi", true), v::get);
@@ -20,7 +21,8 @@ public class ReactiveStateMachineTest {
 		assertTrue(dv.blocking());
 		assertThat(dv.exception(), instanceOf(ReactiveBlockingException.class));
 	}
-	@Test public void advance() {
+	@Test
+	public void advance() {
 		// After advancement, state machine returns output of the supplier.
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		ReactiveStateMachine<String> sm = ReactiveStateMachine.supply(v::get);
@@ -36,7 +38,8 @@ public class ReactiveStateMachineTest {
 		sm.advance();
 		assertEquals(new ReactiveValue<>("hi"), sm.output());
 	}
-	@Test public void output() {
+	@Test
+	public void output() {
 		// Blocking is captured in the inner reactive computation. There doesn't have to be any outer reactive computation at all.
 		ReactiveVariable<String> v = new ReactiveVariable<>(new ReactiveValue<>("hello", true));
 		ReactiveStateMachine<String> sm = ReactiveStateMachine.supply(v::get);
@@ -55,7 +58,8 @@ public class ReactiveStateMachineTest {
 		sm.advance();
 		assertThat(sm.output().exception(), instanceOf(ArithmeticException.class));
 	}
-	@Test public void invalidation() {
+	@Test
+	public void invalidation() {
 		// State machine starts in an invalid state.
 		ReactiveVariable<String> v = new ReactiveVariable<>(new ReactiveValue<>("hello", true));
 		ReactiveStateMachine<String> sm = ReactiveStateMachine.supply(v::get);
@@ -70,7 +74,8 @@ public class ReactiveStateMachineTest {
 		sm.advance();
 		assertTrue(sm.valid());
 	}
-	@Test public void pinning() {
+	@Test
+	public void pinning() {
 		// As an example, we will pin value of AtomicInteger.
 		AtomicInteger n = new AtomicInteger();
 		ReactiveVariable<String> v = new ReactiveVariable<>(new ReactiveValue<>("hello", true));
@@ -97,7 +102,8 @@ public class ReactiveStateMachineTest {
 		sm.advance();
 		assertEquals(new ReactiveValue<>("hello 2"), sm.output());
 	}
-	@Test public void immediate() {
+	@Test
+	public void immediate() {
 		// Create computation that also invalidates its own dependencies. This often happens in practice.
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		ReactiveStateMachine<String> sm = ReactiveStateMachine.supply(() -> {
@@ -118,7 +124,8 @@ public class ReactiveStateMachineTest {
 		ReactiveTrigger v = new ReactiveTrigger();
 		ReactiveTrigger o = new ReactiveTrigger();
 	}
-	@Test public void reactivity() {
+	@Test
+	public void reactivity() {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		ReactiveStateMachine<String> sm = ReactiveStateMachine.supply(new ReactiveValue<>("initial"), v::get);
 		// Initially, valid() and output() have their starting values and no reactive invalidation is signaled.
@@ -179,7 +186,8 @@ public class ReactiveStateMachineTest {
 		assertFalse(t.v.fired());
 		assertFalse(t.o.fired());
 	}
-	@Test public void runnable() {
+	@Test
+	public void runnable() {
 		// We can also construct the state machine from Runnable.
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		ReactiveStateMachine<Void> sm = ReactiveStateMachine.run(new ReactiveValue<>(null, true), () -> {

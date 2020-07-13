@@ -107,7 +107,8 @@ public class ReactiveTrigger implements AutoCloseable {
 	 * Lookups in this set are sped up a bit by precomputing hashCode().
 	 */
 	private final int hashCode = ThreadLocalRandom.current().nextInt();
-	@Override public int hashCode() {
+	@Override
+	public int hashCode() {
 		return hashCode;
 	}
 	/*
@@ -219,7 +220,8 @@ public class ReactiveTrigger implements AutoCloseable {
 		for (ReactiveVariable<?> variable : unsubscribed)
 			variable.unsubscribe(this);
 	}
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return OwnerTrace.of(this).toString();
 	}
 }

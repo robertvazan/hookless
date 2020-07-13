@@ -37,7 +37,8 @@ public class ReactiveLazy<T> implements Supplier<T> {
 	 * The code below will have the same effect regardless of whether this method is synchronized
 	 * and that is true also in case the state is invalidated immediately after being computed.
 	 */
-	@Override public T get() {
+	@Override
+	public T get() {
 		/*
 		 * Always advance to ensure the returned value reflects latest writes.
 		 * Reactive state machine is smart enough to avoid unnecessary advancement and to handle concurrent invocations.
@@ -49,7 +50,8 @@ public class ReactiveLazy<T> implements Supplier<T> {
 		 */
 		return generator.output().get();
 	}
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return OwnerTrace.of(this) + " = " + generator.output();
 	}
 }

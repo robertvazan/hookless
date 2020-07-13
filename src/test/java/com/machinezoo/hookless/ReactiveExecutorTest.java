@@ -13,14 +13,17 @@ import org.junitpioneer.jupiter.*;
 
 public class ReactiveExecutorTest extends TestBase {
 	ReactiveExecutor x;
-	@BeforeEach public void setup() {
+	@BeforeEach
+	public void setup() {
 		x = new ReactiveExecutor();
 	}
-	@AfterEach public void cleanup() throws Exception {
+	@AfterEach
+	public void cleanup() throws Exception {
 		x.shutdown();
 		x.awaitTermination(1, TimeUnit.MINUTES);
 	}
-	@Test public void submit() throws Exception {
+	@Test
+	public void submit() throws Exception {
 		AtomicInteger n = new AtomicInteger();
 		// Task submission works as usual.
 		x.execute(() -> n.incrementAndGet());
@@ -48,7 +51,8 @@ public class ReactiveExecutorTest extends TestBase {
 		while (System.nanoTime() - start < nanos)
 			;
 	}
-	@Test public void countSequential() {
+	@Test
+	public void countSequential() {
 		// Counters start at zero.
 		assertEquals(0, x.getTaskCount());
 		assertEquals(0, x.getEventCount());
@@ -64,7 +68,8 @@ public class ReactiveExecutorTest extends TestBase {
 		assertEquals(2, x.getTaskCount());
 		assertEquals(2, x.getEventCount());
 	}
-	@Test public void countParallel() {
+	@Test
+	public void countParallel() {
 		// Run 100 tasks per core, each 1ms long.
 		AtomicInteger n = new AtomicInteger();
 		int tc = 100 * Runtime.getRuntime().availableProcessors();
@@ -80,7 +85,8 @@ public class ReactiveExecutorTest extends TestBase {
 		// But event count is much smaller, because queued tasks are aggregated in events.
 		assertThat(x.getEventCount(), lessThan(tc / 20L));
 	}
-	@RepeatFailedTest(10) public void parallelism() {
+	@RepeatFailedTest(10)
+	public void parallelism() {
 		// Submit 300ms worth of 1ms tasks.
 		AtomicInteger n = new AtomicInteger();
 		int tc = 300 * Runtime.getRuntime().availableProcessors();
@@ -103,7 +109,8 @@ public class ReactiveExecutorTest extends TestBase {
 		else
 			x.execute(() -> cascade(depth - 1, then));
 	}
-	@RepeatFailedTest(10) public void latency() throws Exception {
+	@RepeatFailedTest(10)
+	public void latency() throws Exception {
 		// Start 30ms long task cascade. This coincides with executor's maximum cascade depth of 30.
 		AtomicReference<Duration> latency = new AtomicReference<>();
 		long t0 = System.nanoTime();
@@ -122,7 +129,8 @@ public class ReactiveExecutorTest extends TestBase {
 		assertThat(ms, greaterThan(30L));
 		assertThat(ms, lessThan(45L));
 	}
-	@Test public void current() throws Exception {
+	@Test
+	public void current() throws Exception {
 		assertSame(x, x.submit(() -> ReactiveExecutor.current()).get());
 	}
 }

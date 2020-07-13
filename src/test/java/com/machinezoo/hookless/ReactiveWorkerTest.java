@@ -11,7 +11,8 @@ import org.junit.jupiter.api.*;
 import org.junitpioneer.jupiter.*;
 
 public class ReactiveWorkerTest extends TestBase {
-	@Test public void reactive() {
+	@Test
+	public void reactive() {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		// Output of reactive worker reflects state of underlying dependencies.
 		ReactiveWorker<String> w = new ReactiveWorker<>(v::get);
@@ -20,7 +21,8 @@ public class ReactiveWorkerTest extends TestBase {
 		v.set("bye");
 		await().until(w::get, equalTo("bye"));
 	}
-	@Test public void supplier() {
+	@Test
+	public void supplier() {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		// Supplier can be provided after the constructor is called.
 		ReactiveWorker<String> w = new ReactiveWorker<>();
@@ -39,7 +41,8 @@ public class ReactiveWorkerTest extends TestBase {
 		await().ignoreExceptions().until(nw::get, nullValue());
 		// If no supplier is set, the supply() method is called by default.
 		ReactiveWorker<String> ow = new ReactiveWorker<String>() {
-			@Override protected String supply() {
+			@Override
+			protected String supply() {
 				// The supply() method can wrap configured supplier.
 				return supplier().get() + "/bye";
 			}
@@ -47,7 +50,8 @@ public class ReactiveWorkerTest extends TestBase {
 		ow.supplier(v::get);
 		await().ignoreExceptions().until(ow::get, equalTo("hello/bye"));
 	}
-	@Test public void exceptions() {
+	@Test
+	public void exceptions() {
 		ReactiveWorker<String> w = new ReactiveWorker<>(() -> {
 			throw new ArithmeticException();
 		});
@@ -57,7 +61,8 @@ public class ReactiveWorkerTest extends TestBase {
 			assertThat(ex.getCause(), instanceOf(ArithmeticException.class));
 		});
 	}
-	@Test public void blocking() {
+	@Test
+	public void blocking() {
 		// Blocking value is propagated as long as initial value is blocking (it is by default).
 		ReactiveVariable<String> v = new ReactiveVariable<>(new ReactiveValue<>("start", true));
 		ReactiveWorker<String> w = new ReactiveWorker<>(v::get);
@@ -73,7 +78,8 @@ public class ReactiveWorkerTest extends TestBase {
 		settle();
 		assertEquals(new ReactiveValue<>("nonblocking"), ReactiveValue.capture(w::get));
 	}
-	@RepeatFailedTest(10) public void initial() {
+	@RepeatFailedTest(10)
+	public void initial() {
 		Supplier<String> s = () -> {
 			sleep(30);
 			return "ready";
@@ -109,7 +115,8 @@ public class ReactiveWorkerTest extends TestBase {
 		v.set("ready");
 		await().until(() -> nw.get(), equalTo("ready"));
 	}
-	@Test public void equality() {
+	@Test
+	public void equality() {
 		// Equality checking is enabled by default.
 		assertTrue(new ReactiveWorker<String>().equality());
 		// Create equal but non-identical strings.
@@ -136,7 +143,8 @@ public class ReactiveWorkerTest extends TestBase {
 		// Equality cannot be changed once the worker is started.
 		assertThrows(IllegalStateException.class, () -> iw.equality(true));
 	}
-	@Test public void pause() {
+	@Test
+	public void pause() {
 		// Consider an expensive busy-looping worker.
 		ReactiveVariable<Long> v = new ReactiveVariable<>(0L);
 		ReactiveWorker<Long> w = new ReactiveWorker<>(() -> {
@@ -163,7 +171,8 @@ public class ReactiveWorkerTest extends TestBase {
 		// Worker starts again and generates non-blocking output.
 		await().until(() -> !ReactiveValue.capture(w::get).blocking());
 	}
-	@Test public void executor() {
+	@Test
+	public void executor() {
 		ReactiveWorker<ReactiveExecutor> w = new ReactiveWorker<>(() -> ReactiveExecutor.current());
 		// Common reactive executor is used by default.
 		assertSame(ReactiveExecutor.common(), w.executor());
