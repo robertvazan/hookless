@@ -4,6 +4,7 @@ package com.machinezoo.hookless.util;
 import java.util.*;
 import java.util.concurrent.*;
 import com.machinezoo.hookless.*;
+import com.machinezoo.stagean.*;
 
 /*
  * We don't want to expose an ocean of new classes wrapping every kind of collection.
@@ -50,6 +51,11 @@ import com.machinezoo.hookless.*;
  * Given that this feature is rarely needed, it is better to not provide it for now
  * and instead expect callers to find another way, for example using immutable objects.
  */
+/**
+ * Reactive wrappers for {@link java.util} collections.
+ */
+@StubDocs
+@NoTests
 public class ReactiveCollections {
 	/*
 	 * There are many ways to supply options to wrapping methods:

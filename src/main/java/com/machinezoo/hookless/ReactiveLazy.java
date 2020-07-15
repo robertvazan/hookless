@@ -4,6 +4,7 @@ package com.machinezoo.hookless;
 import java.util.*;
 import java.util.function.*;
 import com.machinezoo.hookless.util.*;
+import com.machinezoo.stagean.*;
 
 /*
  * Reactive computation graph needs intermediate nodes that serve as reactive consumers and sources at the same time.
@@ -17,6 +18,13 @@ import com.machinezoo.hookless.util.*;
  * is that it can be invalidated when dependencies change. It therefore avoids staleness of its non-reactive counterpart.
  * Invalidation resets reactive lazy to its initial state except that reactive pins are preserved when necessary.
  */
+/**
+ * Single-value synchronous cache for results of reactive computations.
+ * 
+ * @param <T>
+ *            type of cached result
+ */
+@StubDocs
 public class ReactiveLazy<T> implements Supplier<T> {
 	/*
 	 * Reactive lazy is a special case of reactive state machine. Its implementation is therefore a trivial wrapper.

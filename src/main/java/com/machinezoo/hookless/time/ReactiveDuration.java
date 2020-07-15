@@ -4,7 +4,15 @@ package com.machinezoo.hookless.time;
 import java.math.*;
 import java.time.*;
 import java.time.temporal.*;
+import com.machinezoo.stagean.*;
 
+/**
+ * Reactive version of {@link Duration}.
+ */
+@DraftApi("requires review")
+@DraftCode("requires review")
+@NoTests
+@StubDocs
 public abstract class ReactiveDuration {
 	final ReactiveClock clock;
 	final Instant zero;

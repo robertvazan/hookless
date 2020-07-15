@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 import com.machinezoo.hookless.util.*;
+import com.machinezoo.stagean.*;
 
 /*
  * Reactive computation graph needs intermediate nodes that are both consumers and sources of reactivity.
@@ -20,6 +21,13 @@ import com.machinezoo.hookless.util.*;
  * which among other things allows it to pause the reactive computation when nobody reads the result.
  * This similarity allows us to implement reactive worker as an instance of reactive thread.
  */
+/**
+ * Single-value asynchronous cache for results of reactive computations.
+ * 
+ * @param <T>
+ *            type of cached result
+ */
+@StubDocs
 public class ReactiveWorker<T> implements Supplier<T> {
 	/*
 	 * Worker has a configuration phase when its properties can be changed. It is started automatically on first access.

@@ -6,6 +6,7 @@ import java.io.*;
 import java.util.*;
 import java.util.function.*;
 import com.machinezoo.hookless.util.*;
+import com.machinezoo.stagean.*;
 import it.unimi.dsi.fastutil.objects.*;
 
 /*
@@ -25,6 +26,10 @@ import it.unimi.dsi.fastutil.objects.*;
  * Dependencies from these scopes can then be merged into single resulting scope.
  * The only downside of this solution is that parallelized computations have limited access to freeze and pin functionality.
  */
+/**
+ * Thread-local context for reactive computations that collects reactive dependencies.
+ */
+@StubDocs
 public class ReactiveScope {
 	public ReactiveScope() {
 		OwnerTrace.of(this).alias("scope");

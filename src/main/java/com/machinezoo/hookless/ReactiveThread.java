@@ -7,6 +7,7 @@ import java.util.function.*;
 import org.slf4j.*;
 import com.machinezoo.hookless.util.*;
 import com.machinezoo.noexception.*;
+import com.machinezoo.stagean.*;
 import io.micrometer.core.instrument.*;
 import io.micrometer.core.instrument.Timer;
 
@@ -25,6 +26,10 @@ import io.micrometer.core.instrument.Timer;
  * API details are kept consistent with the other reactive classes rather than with Java's Thread.
  * That's why method names are slightly different and some methods are fluent.
  */
+/**
+ * Reactive substitute for Java's {@link Thread}.
+ */
+@StubDocs
 public class ReactiveThread {
 	/*
 	 * The thread can be in three states: initialized, running, and stopped. Initialized state allows changes to configuration.

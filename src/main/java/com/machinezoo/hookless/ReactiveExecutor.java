@@ -4,6 +4,7 @@ package com.machinezoo.hookless;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import com.machinezoo.stagean.*;
 import io.micrometer.core.instrument.*;
 import io.micrometer.core.instrument.Timer;
 
@@ -23,6 +24,10 @@ import io.micrometer.core.instrument.Timer;
  * This has the effect that cascading tasks inside one event will all run together, yielding short latencies independent of cascading depth.
  * There is a reasonable limit on cascading depth to prevent buggy code from creating events that never stop.
  */
+/**
+ * Latency-optimized executor designed for reactive programs.
+ */
+@StubDocs
 public class ReactiveExecutor extends ThreadPoolExecutor {
 	private static ThreadLocal<ReactiveTask> running = new ThreadLocal<>();
 	/*

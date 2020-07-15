@@ -11,4 +11,7 @@
  * - Method toString() is defined. It uses OwnerTrace.toString().
  * - Method toString() may create reactive dependencies, which may result in harmless phantom dependencies during debugging.
  */
+/**
+ * Reactive primitives and core reactive classes.
+ */
 package com.machinezoo.hookless;

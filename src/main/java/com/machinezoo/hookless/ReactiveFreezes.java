@@ -3,12 +3,17 @@ package com.machinezoo.hookless;
 
 import java.util.*;
 import java.util.function.*;
+import com.machinezoo.stagean.*;
 
 /*
  * Freezes get their own object, so that they can be shared between nested scopes if needed.
  * We can also make the internal state observable and modifiable by placing extra methods here.
  * We could have just exposed Map<Object, ReactiveValue<?>>, but that would prevent future API improvements.
  */
+/**
+ * Container for frozen outputs of reactive computations.
+ */
+@StubDocs
 public class ReactiveFreezes {
 	/*
 	 * The map is lazily constructed to get some small performance gain,

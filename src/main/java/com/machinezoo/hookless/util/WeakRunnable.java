@@ -4,6 +4,7 @@ package com.machinezoo.hookless.util;
 import java.lang.ref.*;
 import java.util.*;
 import java.util.function.*;
+import com.machinezoo.stagean.*;
 
 /*
  * Hookless relies on garbage collection of weakly referenced objects, so that apps don't have to explicitly unsubscribe from sources.
@@ -17,6 +18,14 @@ import java.util.function.*;
  * This class makes it easy to create weak Runnable from instance method references that can be safely scheduled on executors.
  * It should be used whenever reactive objects need to schedule their execution in a thread pool.
  */
+/**
+ * Weak reference to an instance method.
+ * 
+ * @param <T>
+ *            type of object that defines the method
+ */
+@StubDocs
+@NoTests
 public class WeakRunnable<T> implements Runnable {
 	private final WeakReference<T> weakref;
 	private final Consumer<T> method;

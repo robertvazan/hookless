@@ -2,6 +2,7 @@
 package com.machinezoo.hookless.util;
 
 import java.util.*;
+import com.machinezoo.stagean.*;
 
 /*
  * It is desirable for reactive computations to produce the same output for the same state of their dependencies.
@@ -12,6 +13,11 @@ import java.util.*;
  * Reproducibility would imply repeatability of persistent program output, which would require not only seed consistency
  * but also algorithm consistency, which is complicated to implement and likely less performant than native RNG.
  */
+/**
+ * Provider of {@link Random} instances that return the same values for the same seeding key.
+ */
+@NoTests
+@StubDocs
 public class ConsistentRandom {
 	/*
 	 * We will return plain Random for now. We could extend the functionality later just like ThreadLocalRandom does.

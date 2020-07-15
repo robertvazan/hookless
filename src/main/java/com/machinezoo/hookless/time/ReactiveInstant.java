@@ -4,7 +4,15 @@ package com.machinezoo.hookless.time;
 import java.math.*;
 import java.time.*;
 import java.time.temporal.*;
+import com.machinezoo.stagean.*;
 
+/**
+ * Reactive version of {@link Instant}.
+ */
+@DraftApi("requires review")
+@DraftCode("requires review")
+@NoTests
+@StubDocs
 public class ReactiveInstant implements Comparable<ReactiveInstant> {
 	final ReactiveClock clock;
 	final Duration shift;

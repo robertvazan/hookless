@@ -2,12 +2,17 @@
 package com.machinezoo.hookless;
 
 import java.util.function.*;
+import com.machinezoo.stagean.*;
 
 /*
  * Since reactive code can run outside of reactive scope, for example during tests,
  * all code would be normally required to constantly check ReactiveScope.current() for null.
  * To avoid that, we offer static methods that provide reasonable fallback for null scope.
  */
+/**
+ * Convenience methods to access current {@link ReactiveScope}.
+ */
+@StubDocs
 public class CurrentReactiveScope {
 	public static void block() {
 		ReactiveScope current = ReactiveScope.current();

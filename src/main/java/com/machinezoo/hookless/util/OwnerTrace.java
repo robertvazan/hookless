@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import com.google.common.cache.*;
+import com.machinezoo.stagean.*;
 import io.opentracing.*;
 import it.unimi.dsi.fastutil.objects.*;
 
@@ -40,6 +41,12 @@ import it.unimi.dsi.fastutil.objects.*;
  * We will use volatile and final fields extensively to avoid expensive locking.
  * There are also many other optimizations, to keep the cost of owner tracing to minimum.
  */
+/**
+ * Trace of object ancestors for easier debugging and tracing.
+ */
+@NoTests
+@StubDocs
+@DraftApi("should be in a separate library")
 public class OwnerTrace<T> {
 	/*
 	 * We don't want to force every class to carry OwnerTrace as a member.

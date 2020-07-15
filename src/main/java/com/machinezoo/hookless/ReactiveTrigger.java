@@ -6,6 +6,7 @@ import java.util.concurrent.*;
 import org.slf4j.*;
 import com.machinezoo.hookless.util.*;
 import com.machinezoo.noexception.*;
+import com.machinezoo.stagean.*;
 import io.opentracing.*;
 import io.opentracing.util.*;
 
@@ -31,6 +32,10 @@ import io.opentracing.util.*;
  * Trigger implements AutoCloseable, so that it can be used in try-with-resources,
  * although that's usually only useful in unit tests.
  */
+/**
+ * Callback for changes in {@link ReactiveVariable}s.
+ */
+@StubDocs
 public class ReactiveTrigger implements AutoCloseable {
 	public ReactiveTrigger() {
 		OwnerTrace.of(this).alias("trigger");

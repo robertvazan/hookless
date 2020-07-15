@@ -4,7 +4,15 @@ package com.machinezoo.hookless.time;
 import java.math.*;
 import java.time.*;
 import java.time.temporal.*;
+import com.machinezoo.stagean.*;
 
+/**
+ * Reactive version of {@link Duration}, positive (growing) variant.
+ */
+@DraftApi("requires review")
+@DraftCode("requires review")
+@NoTests
+@StubDocs
 public class GrowingReactiveDuration extends ReactiveDuration implements Comparable<GrowingReactiveDuration> {
 	GrowingReactiveDuration(ReactiveClock clock, Instant zero) {
 		super(clock, zero);

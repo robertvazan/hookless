@@ -9,10 +9,18 @@ import java.util.function.*;
 import com.google.common.util.concurrent.*;
 import com.machinezoo.hookless.time.*;
 import com.machinezoo.hookless.util.*;
+import com.machinezoo.stagean.*;
 
 /*
  * Reactive wrapper around CompletableFuture.
  */
+/**
+ * Reactive wrapper for {@link CompletableFuture}.
+ * 
+ * @param <T>
+ *            type of result returned by the future
+ */
+@StubDocs
 public class ReactiveFuture<T> {
 	/*
 	 * Strong reference to CompletableFuture. If something references us, CompletableFuture must stay alive.

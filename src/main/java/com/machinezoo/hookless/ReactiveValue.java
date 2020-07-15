@@ -5,6 +5,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
+import com.machinezoo.stagean.*;
 
 /*
  * This is the equivalent of CompletableFuture for reactive programming:
@@ -36,6 +37,7 @@ import java.util.function.*;
  * @see ReactiveVariable
  * @see ReactiveScope
  */
+@DraftDocs("link to reactive blocking and reactive value/output articles")
 public class ReactiveValue<T> {
 	private final T result;
 	/**

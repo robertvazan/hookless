@@ -1,6 +1,8 @@
 // Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless;
 
+import com.machinezoo.stagean.*;
+
 /**
  * Default exception to throw when reactive code needs to reactively block.
  * <p>
@@ -23,6 +25,7 @@ package com.machinezoo.hookless;
  * @see ReactiveScope#block()
  * @see CurrentReactiveScope#block()
  */
+@DraftDocs("link to reactive blocking article")
 public class ReactiveBlockingException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 	/*

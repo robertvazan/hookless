@@ -4,6 +4,7 @@ package com.machinezoo.hookless;
 import java.util.*;
 import java.util.concurrent.*;
 import com.machinezoo.hookless.util.*;
+import com.machinezoo.stagean.*;
 import io.opentracing.*;
 import io.opentracing.util.*;
 
@@ -16,6 +17,13 @@ import io.opentracing.util.*;
  * We are referencing it directly in reactive scope and reactive trigger instead of indirect references via abstract base class.
  * All other reactive data sources internally use reactive variable either to directly store state or to trigger invalidations.
  */
+/**
+ * Reactive container for single value.
+ * 
+ * @param <T>
+ *            type of the stored value
+ */
+@StubDocs
 public class ReactiveVariable<T> {
 	/*
 	 * There is no perfect solution for equality testing, so we resort to configuration.

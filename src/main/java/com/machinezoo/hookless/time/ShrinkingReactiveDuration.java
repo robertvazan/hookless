@@ -4,7 +4,15 @@ package com.machinezoo.hookless.time;
 import java.math.*;
 import java.time.*;
 import java.time.temporal.*;
+import com.machinezoo.stagean.*;
 
+/**
+ * Reactive version of {@link Duration}, negative (shrinking) variant.
+ */
+@DraftApi("requires review")
+@DraftCode("requires review")
+@NoTests
+@StubDocs
 public class ShrinkingReactiveDuration extends ReactiveDuration implements Comparable<ShrinkingReactiveDuration> {
 	ShrinkingReactiveDuration(ReactiveClock clock, Instant zero) {
 		super(clock, zero);

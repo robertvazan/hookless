@@ -3,6 +3,7 @@ package com.machinezoo.hookless;
 
 import java.util.*;
 import java.util.function.*;
+import com.machinezoo.stagean.*;
 
 /*
  * Container for reactive pins that span multiple blocking computations. Rationale is similar to the one for reactive freezes.
@@ -11,6 +12,10 @@ import java.util.function.*;
  * This "close" event is theoretically useful, but it adds a lot of complexity and makes reactive scopes hard to compose.
  * It was previously used in reactive time, but it was removed at the cost of small CPU/memory overhead.
  */
+/**
+ * Container for pinned outputs of reactive computations.
+ */
+@StubDocs
 public class ReactivePins {
 	/*
 	 * Equivalents of corresponding code in reactive freezes.

@@ -4,6 +4,7 @@ package com.machinezoo.hookless;
 import java.util.*;
 import java.util.function.*;
 import com.machinezoo.hookless.util.*;
+import com.machinezoo.stagean.*;
 
 /*
  * Reactive computations sometimes need to control other reactive computations.
@@ -16,6 +17,13 @@ import com.machinezoo.hookless.util.*;
  * that exposes high-level reactive API to the controlling reactive computation.
  * The API allows single-stepping through the controlled reactive computation. Hence the state machine metaphor.
  */
+/**
+ * Monitoring and control over another reactive computation.
+ * 
+ * @param <T>
+ *            output type of the computation
+ */
+@StubDocs
 public class ReactiveStateMachine<T> {
 	/*
 	 * Last output of the controlled reactive computation.
