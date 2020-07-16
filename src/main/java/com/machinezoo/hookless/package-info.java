@@ -13,5 +13,7 @@
  */
 /**
  * Reactive primitives and core reactive classes.
+ * 
+ * @see <a href="https://hookless.machinezoo.com/">Hookless website</a>
  */
 package com.machinezoo.hookless;
