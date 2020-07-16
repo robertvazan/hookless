@@ -69,6 +69,9 @@ public class ReactiveCollections {
 	 * Since most options are boolean, we then have a choice between boolean parameter and assuming true parameter.
 	 * We will assume true parameter, because this favors the much more common static configuration of reactive collections.
 	 */
+	/**
+	 * Options controlling behavior of reactive collections.
+	 */
 	public static class Options {
 		/*
 		 * Checking for full equality during writes may reduce the number of invalidations.

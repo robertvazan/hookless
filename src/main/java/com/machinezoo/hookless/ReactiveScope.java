@@ -70,6 +70,9 @@ public class ReactiveScope {
 		current.set(this);
 		return new ScopeComputation();
 	}
+	/**
+	 * Handle to current {@link ReactiveScope} to be used in try-with-resources constructs.
+	 */
 	public static abstract class Computation implements Closeable {
 		/*
 		 * Note this is not the same as Closeable. Exception specification has been left out.

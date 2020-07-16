@@ -69,6 +69,9 @@ public class ReactiveVariable<T> {
 	 * The object representation of version is nevertheless still needed in various APIs.
 	 * We will provide an inner class that represents either latest or any specified version.
 	 */
+	/**
+	 * Reference to particular version of {@link ReactiveVariable}.
+	 */
 	public static class Version {
 		private final ReactiveVariable<?> variable;
 		public ReactiveVariable<?> variable() {
