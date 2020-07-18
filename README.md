@@ -4,7 +4,7 @@
 
 # Hookless #
 
-Hookless is a [reactive programming](https://en.wikipedia.org/wiki/Reactive_programming) library for Java. It automatically runs dependent reactive computations whenever change is detected in any of their dependencies.
+Hookless is a [reactive programming](https://en.wikipedia.org/wiki/Reactive_programming) library for Java. It automatically runs dependent reactive computations whenever change is detected in any of their dependencies. It is nearly completely transparent to application code, because it tracks dependencies implicitly via thread-local context object.
 
 ## Download ##
 
@@ -16,7 +16,7 @@ Class-level progress is tracked using [Stagean annotations](https://stagean.mach
 
 ## Documentation ##
 
-You can use [javadoc](https://hookless.machinezoo.com/javadocs/core/overview-summary.html) for reference, but most classes are not documented yet. There are however extensive comments in [source code](src/main/java/com/machinezoo/hookless). [Website](https://stagean.machinezoo.com/) contains additional information, including [conceptual overview](https://hookless.machinezoo.com/concepts) and a list of [reactive adapters](https://hookless.machinezoo.com/adapters).
+You can use [javadoc](https://hookless.machinezoo.com/javadocs/core/overview-summary.html) for reference, but most classes are not documented yet. There are however extensive comments in [source code](src/main/java/com/machinezoo/hookless). [Website](https://hookless.machinezoo.com/) contains additional information, including [conceptual overview](https://hookless.machinezoo.com/concepts) and a list of [reactive adapters](https://hookless.machinezoo.com/adapters).
 
 ## Contribute ##
 
