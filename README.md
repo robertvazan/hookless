@@ -6,13 +6,13 @@
 
 Hookless is a [reactive programming](https://en.wikipedia.org/wiki/Reactive_programming) library for Java. It automatically runs dependent reactive computations whenever change is detected in any of their dependencies. It is nearly completely transparent to application code, because it tracks dependencies implicitly via thread-local context object.
 
-## Download ##
-
-Hookless is available from [Maven Central](https://search.maven.org/artifact/com.machinezoo.hookless/hookless). Further setup instructions are on the [website](https://hookless.machinezoo.com/). Hookless is distributed under [Apache License 2.0](LICENSE).
-
 ## Status ##
 
 Class-level progress is tracked using [Stagean annotations](https://stagean.machinezoo.com/). Core classes are stable, including APIs, but poorly documented.
+
+## Download ##
+
+Hookless is available from [Maven Central](https://search.maven.org/artifact/com.machinezoo.hookless/hookless). Further setup instructions are on the [website](https://hookless.machinezoo.com/). Hookless is distributed under [Apache License 2.0](LICENSE).
 
 ## Documentation ##
 
