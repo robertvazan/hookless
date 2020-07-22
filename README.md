@@ -1,6 +1,6 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.machinezoo.hookless/hookless)](https://search.maven.org/artifact/com.machinezoo.hookless/hookless)
 [![Build Status](https://travis-ci.com/robertvazan/hookless.svg?branch=master)](https://travis-ci.com/robertvazan/hookless)
-[![Coverage Status](https://coveralls.io/repos/github/robertvazan/hookless/badge.svg?branch=master)](https://coveralls.io/github/robertvazan/hookless?branch=master)
+[![Coverage Status](https://codecov.io/gh/robertvazan/hookless/branch/master/graph/badge.svg)](https://codecov.io/gh/robertvazan/hookless)
 
 # Hookless #
 
