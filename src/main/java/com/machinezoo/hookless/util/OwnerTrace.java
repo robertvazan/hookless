@@ -169,6 +169,8 @@ public class OwnerTrace<T> {
 	public OwnerTrace<T> parent(Object parent) {
 		if (parent instanceof OwnerTrace)
 			data.parent = ((OwnerTrace<?>)parent).data;
+		else if (parent == null)
+			data.parent = null;
 		else
 			data.parent = OwnerTrace.of(parent).data;
 		return this;
