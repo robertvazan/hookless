@@ -79,7 +79,7 @@ public abstract class AbstractReactivePreferences extends ReactivePreferences {
 		if (path.equals(""))
 			path = absolutePath;
 		else if (!path.startsWith("/"))
-			path = absolutePath + "/" + path;
+			path = (parent != null ? absolutePath + "/" : "/") + path;
 		/*
 		 * Check name component length.
 		 */

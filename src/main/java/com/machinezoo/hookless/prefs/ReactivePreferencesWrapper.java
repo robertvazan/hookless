@@ -74,7 +74,9 @@ class ReactivePreferencesWrapper extends AbstractReactivePreferences {
 		 * Remove the variable instead of just changing it.
 		 * It might be faster, but most importantly, it's safe in case lots of keys are added and then removed.
 		 */
-		kversions.remove(key).set(new Object());
+		ReactiveVariable<Object> kversion = kversions.remove(key);
+		if (kversion != null)
+			kversion.set(new Object());
 	}
 	private void invalidateNode() {
 		for (String key : kversions.keySet())
