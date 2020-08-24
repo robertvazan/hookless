@@ -3,21 +3,23 @@ package com.machinezoo.hookless;
 
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.*;
+import com.machinezoo.noexception.*;
 
 public class CurrentReactiveScopeTest {
 	@Test
 	public void block() {
 		// Propagate blocking to the current scope.
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		ReactiveScope s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			CurrentReactiveScope.block();
-			assertTrue(c.scope().blocked());
+			assertTrue(s.blocked());
 		}
 		// No effect and no exception outside of any scope.
 		CurrentReactiveScope.block();
 	}
 	@Test
 	public void blocked() {
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		try (CloseableScope c = new ReactiveScope().enter()) {
 			// Read blocking state from the current scope.
 			assertFalse(CurrentReactiveScope.blocked());
 			CurrentReactiveScope.block();
@@ -29,10 +31,11 @@ public class CurrentReactiveScopeTest {
 	@Test
 	public void freeze() {
 		// Propagate freeze() call to the current scope.
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		ReactiveScope s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			assertEquals("value", CurrentReactiveScope.freeze("key", () -> "value"));
 			assertEquals("value", CurrentReactiveScope.freeze("key", () -> "other"));
-			assertEquals(new ReactiveValue<>("value"), c.scope().freezes().get("key"));
+			assertEquals(new ReactiveValue<>("value"), s.freezes().get("key"));
 		}
 		// Re-evaluate the Supplier each time outside of any reactive scope.
 		assertEquals("one", CurrentReactiveScope.freeze("key", () -> "one"));
@@ -41,10 +44,11 @@ public class CurrentReactiveScopeTest {
 	@Test
 	public void pin() {
 		// Propagate pin() call to the current scope.
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		ReactiveScope s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			assertEquals("value", CurrentReactiveScope.pin("key", () -> "value"));
 			assertEquals("value", CurrentReactiveScope.pin("key", () -> "other"));
-			assertEquals(new ReactiveValue<>("value"), c.scope().pins().get("key"));
+			assertEquals(new ReactiveValue<>("value"), s.pins().get("key"));
 		}
 		// Re-evaluate the Supplier each time outside of any reactive scope.
 		assertEquals("one", CurrentReactiveScope.pin("key", () -> "one"));

@@ -2,10 +2,10 @@
 package com.machinezoo.hookless;
 
 import static java.util.stream.Collectors.*;
-import java.io.*;
 import java.util.*;
 import java.util.function.*;
 import com.machinezoo.hookless.util.*;
+import com.machinezoo.noexception.*;
 import com.machinezoo.stagean.*;
 import it.unimi.dsi.fastutil.objects.*;
 
@@ -55,7 +55,8 @@ public class ReactiveScope {
 	private ReactiveScope parent;
 	/*
 	 * Scopes are designed to be used with Java's try-with-resources construct.
-	 * This is much more flexible and cleaner than offering runInScope(Runnable) or similar method.
+	 * We could also offer run(Runnable) and supply(Supplier) methods, but those are more suitable for APIs that are used frequently.
+	 * ReactiveScope is a fairly low-level API, so we will just provide the try-with-resources variant.
 	 * 
 	 * We do not create tracing scope for every reactive scope/computation even though it feels natural.
 	 * Reactive computations generally shouldn't have side effects,
@@ -63,58 +64,25 @@ public class ReactiveScope {
 	 * Computations might take a long time, which is interesting, but they usually consume nearly all the time
 	 * of their containing thread pool task, which is already traced via reactive trigger.
 	 */
-	public Computation enter() {
+	public CloseableScope enter() {
 		if (parent != null)
 			throw new IllegalStateException("Cannot enter the same reactive scope recursively.");
 		parent = current.get();
 		current.set(this);
-		return new ScopeComputation();
-	}
-	/**
-	 * Handle to current {@link ReactiveScope} to be used in try-with-resources constructs.
-	 */
-	public static abstract class Computation implements Closeable {
-		/*
-		 * Note this is not the same as Closeable. Exception specification has been left out.
-		 * That prevents annoying unhandled exception errors from the compiler in calling code.
-		 */
-		public abstract void close();
-		public abstract ReactiveScope scope();
-	}
-	private class ScopeComputation extends Computation {
-		@Override
-		public void close() {
+		return () -> {
 			current.set(parent);
 			parent = null;
-		}
-		@Override
-		public ReactiveScope scope() {
-			return ReactiveScope.this;
-		}
+		};
 	}
 	/*
 	 * It is often useful to prevent dependency logging within some scope.
 	 * This could be done by temporarily activating a throwaway scope,
 	 * but it is more efficient and arguably cleaner to set active scope to null.
 	 */
-	public static Computation ignore() {
-		IgnoredComputation computation = new IgnoredComputation(current.get());
+	public static CloseableScope ignore() {
+		ReactiveScope parent = current.get();
 		current.set(null);
-		return computation;
-	}
-	private static class IgnoredComputation extends Computation {
-		private final ReactiveScope parent;
-		IgnoredComputation(ReactiveScope parent) {
-			this.parent = parent;
-		}
-		@Override
-		public void close() {
-			current.set(parent);
-		}
-		@Override
-		public ReactiveScope scope() {
-			return null;
-		}
+		return () -> current.set(parent);
 	}
 	/*
 	 * We can only depend on one version of every variable, which means we need a map from variables to their versions.
@@ -209,71 +177,58 @@ public class ReactiveScope {
 	 * It creates nested scope and runs the non-blocking operations within the nested scope.
 	 * When done, it copies dependencies to the current scope and importantly avoids copying the blocked flag.
 	 */
-	public static Computation nonblocking() {
-		return new NonBlockingComputation();
-	}
-	private static class NonBlockingComputation extends Computation {
-		private final ReactiveScope parent;
-		private ReactiveScope scope;
-		private Computation computation;
-		NonBlockingComputation() {
+	public static CloseableScope nonblocking() {
+		/*
+		 * It is quite possible the parent scope is null, especially during test runs.
+		 * We should avoid creating nested scope in that case,
+		 * because the non-blocking context is expected to be transparent in every way except for blocking.
+		 */
+		ReactiveScope parent = current();
+		if (parent == null) {
+			return () -> {
+			};
+		}
+		ReactiveScope scope = OwnerTrace.of(new ReactiveScope())
+			.parent(parent)
+			.alias("nonblocking")
+			.generateId()
+			.target();
+		/*
+		 * Share freezes and pins with parent scope. Callers expect non-blocking context to be transparent for freezes and pins.
+		 * For pins, don't propagate changes automatically to the parent scope, because we will want to filter them later.
+		 */
+		scope.freezes(parent.freezes());
+		scope.pins().parent(parent.pins());
+		/*
+		 * Inherit blocking from parent if that one is already blocked.
+		 * This will prevent confusion inside the non-blocking scope, including incorrect pinning of blocking results.
+		 * Non-blocking scope only prevents blocking from propagating from the inner scope to the outer one.
+		 */
+		if (parent.blocked())
+			scope.block();
+		CloseableScope computation = scope.enter();
+		return () -> {
+			computation.close();
 			/*
-			 * It is quite possible the parent scope is null, especially during test runs.
-			 * We should avoid creating nested scope in that case,
-			 * because the non-blocking context is expected to be transparent in every way except for blocking.
+			 * Propagate pins to parent scope. If there are any, then it means the parent scope is not blocked.
+			 * Any pins collected in the nested scope must have been collected before the nested scope was marked as blocking.
+			 * So these are effectively standard pins computed without reliance on any blocking operations.
+			 * 
+			 * While pins are propagated, pin invalidation is not.
+			 * If pins were invalidated in nested scope, it must have happened because of blocking in the nested scope.
+			 * Since this is non-blocking scope, we don't want to propagate any effects of blocking, including pin invalidation.
 			 */
-			parent = current();
-			if (parent != null) {
-				scope = OwnerTrace.of(new ReactiveScope())
-					.parent(parent)
-					.alias("nonblocking")
-					.generateId()
-					.target();
-				/*
-				 * Share freezes and pins with parent scope. Callers expect non-blocking context to be transparent for freezes and pins.
-				 * For pins, don't propagate changes automatically to the parent scope, because we will want to filter them later.
-				 */
-				scope.freezes(parent.freezes());
-				scope.pins().parent(parent.pins());
-				/*
-				 * Inherit blocking from parent if that one is already blocked.
-				 * This will prevent confusion inside the non-blocking scope, including incorrect pinning of blocking results.
-				 * Non-blocking scope only prevents blocking from propagating from the inner scope to the outer one.
-				 */
-				if (parent.blocked())
-					scope.block();
-				computation = scope.enter();
-			}
-		}
-		@Override
-		public void close() {
-			if (parent != null) {
-				computation.close();
-				/*
-				 * Propagate pins to parent scope. If there are any, then it means the parent scope is not blocked.
-				 * Any pins collected in the nested scope must have been collected before the nested scope was marked as blocking.
-				 * So these are effectively standard pins computed without reliance on any blocking operations.
-				 * 
-				 * While pins are propagated, pin invalidation is not.
-				 * If pins were invalidated in nested scope, it must have happened because of blocking in the nested scope.
-				 * Since this is non-blocking scope, we don't want to propagate any effects of blocking, including pin invalidation.
-				 */
-				for (Object key : scope.pins().keys())
-					parent.pins().set(key, scope.pins().get(key));
-				/*
-				 * We must be careful here. Nested scope's versions() could return single out-of-date version due to invalidated pins.
-				 * Nevertheless, if pins have been invalidated, then nested scope must have been blocked.
-				 * If it was blocked, then checking of pin invalidation is disabled and versions() behaves normally.
-				 * All that means we can safely query versions() of the nested scope here and assume standard behavior.
-				 */
-				for (ReactiveVariable.Version version : scope.versions())
-					parent.watch(version.variable(), version.number());
-			}
-		}
-		@Override
-		public ReactiveScope scope() {
-			return scope;
-		}
+			for (Object key : scope.pins().keys())
+				parent.pins().set(key, scope.pins().get(key));
+			/*
+			 * We must be careful here. Nested scope's versions() could return single out-of-date version due to invalidated pins.
+			 * Nevertheless, if pins have been invalidated, then nested scope must have been blocked.
+			 * If it was blocked, then checking of pin invalidation is disabled and versions() behaves normally.
+			 * All that means we can safely query versions() of the nested scope here and assume standard behavior.
+			 */
+			for (ReactiveVariable.Version version : scope.versions())
+				parent.watch(version.variable(), version.number());
+		};
 	}
 	/*
 	 * Since other threads can change global state at any time, we would normally have to safeguard against it.

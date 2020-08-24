@@ -16,6 +16,7 @@ import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 import org.junitpioneer.jupiter.*;
 import com.google.common.util.concurrent.*;
+import com.machinezoo.noexception.*;
 
 public class ReactiveFurureTest extends TestBase {
 	@Test
@@ -38,7 +39,7 @@ public class ReactiveFurureTest extends TestBase {
 	@Test
 	public void waiting() {
 		ReactiveFuture<String> rf = new ReactiveFuture<>();
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		try (CloseableScope c = new ReactiveScope().enter()) {
 			// State checks are negative without any blocking.
 			assertFalse(rf.done());
 			assertFalse(rf.failed());
@@ -54,7 +55,7 @@ public class ReactiveFurureTest extends TestBase {
 	@Test
 	public void done() {
 		ReactiveFuture<String> rf = ReactiveFuture.wrap(CompletableFuture.completedFuture("hello"));
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		try (CloseableScope c = new ReactiveScope().enter()) {
 			assertTrue(rf.done());
 			assertFalse(rf.failed());
 			assertFalse(rf.cancelled());
@@ -74,7 +75,7 @@ public class ReactiveFurureTest extends TestBase {
 	public void failed() {
 		ReactiveFuture<String> rf = new ReactiveFuture<>();
 		rf.completable().completeExceptionally(new ArithmeticException());
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		try (CloseableScope c = new ReactiveScope().enter()) {
 			assertTrue(rf.done());
 			assertTrue(rf.failed());
 			assertFalse(rf.cancelled());
@@ -90,7 +91,7 @@ public class ReactiveFurureTest extends TestBase {
 	public void cancelled() {
 		ReactiveFuture<String> rf = new ReactiveFuture<>();
 		rf.completable().cancel(false);
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		try (CloseableScope c = new ReactiveScope().enter()) {
 			assertTrue(rf.done());
 			assertTrue(rf.failed());
 			assertTrue(rf.cancelled());
@@ -106,24 +107,24 @@ public class ReactiveFurureTest extends TestBase {
 	public void timeout() {
 		ReactiveFuture<String> rf = new ReactiveFuture<>();
 		// Timeout overloads initially reactively block.
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		try (CloseableScope c = new ReactiveScope().enter()) {
 			assertThrows(ReactiveBlockingException.class, () -> rf.get(Duration.ofMillis(50)));
 			assertTrue(CurrentReactiveScope.blocked());
 		}
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		try (CloseableScope c = new ReactiveScope().enter()) {
 			assertThrows(ReactiveBlockingException.class, () -> rf.get(50, TimeUnit.MILLISECONDS));
 			assertTrue(CurrentReactiveScope.blocked());
 		}
 		// When the timeout expires, the same methods throw non-blocking timeout exception instead.
 		sleep(100);
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		try (CloseableScope c = new ReactiveScope().enter()) {
 			assertThrows(UncheckedTimeoutException.class, () -> rf.get(Duration.ofMillis(50)));
 			assertThrows(UncheckedTimeoutException.class, () -> rf.get(50, TimeUnit.MILLISECONDS));
 			assertFalse(CurrentReactiveScope.blocked());
 		}
 		// When the future is completed, the timeout exception is replaced with the actual result.
 		rf.completable().complete("hello");
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		try (CloseableScope c = new ReactiveScope().enter()) {
 			assertEquals("hello", rf.get(Duration.ofMillis(50)));
 			assertEquals("hello", rf.get(50, TimeUnit.MILLISECONDS));
 			assertFalse(CurrentReactiveScope.blocked());

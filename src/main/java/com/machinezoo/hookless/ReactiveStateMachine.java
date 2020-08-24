@@ -4,6 +4,7 @@ package com.machinezoo.hookless;
 import java.util.*;
 import java.util.function.*;
 import com.machinezoo.hookless.util.*;
+import com.machinezoo.noexception.*;
 import com.machinezoo.stagean.*;
 
 /*
@@ -163,7 +164,7 @@ public class ReactiveStateMachine<T> {
 		if (pins != null)
 			scope.pins(pins);
 		pins = null;
-		try (ReactiveScope.Computation computation = scope.enter()) {
+		try (CloseableScope computation = scope.enter()) {
 			ReactiveValue<T> value = ReactiveValue.capture(supplier);
 			/*
 			 * We will be sending two invalidations to the controlling reactive computation.

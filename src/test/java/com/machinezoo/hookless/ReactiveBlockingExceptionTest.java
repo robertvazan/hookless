@@ -5,6 +5,7 @@ import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.*;
+import com.machinezoo.noexception.*;
 
 public class ReactiveBlockingExceptionTest {
 	@Test
@@ -26,32 +27,37 @@ public class ReactiveBlockingExceptionTest {
 	@Test
 	public void block() {
 		// Merely calling the constructor does not block the current computation.
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		ReactiveScope s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			new ReactiveBlockingException();
-			assertFalse(c.scope().blocked());
+			assertFalse(s.blocked());
 		}
 		// Calling block() however does both blocking and throwing.
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			ReactiveBlockingException e = assertThrows(ReactiveBlockingException.class, () -> ReactiveBlockingException.block());
-			assertTrue(c.scope().blocked());
+			assertTrue(s.blocked());
 			assertNull(e.getMessage());
 			assertNull(e.getCause());
 		}
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			ReactiveBlockingException e = assertThrows(ReactiveBlockingException.class, () -> ReactiveBlockingException.block("message"));
-			assertTrue(c.scope().blocked());
+			assertTrue(s.blocked());
 			assertEquals("message", e.getMessage());
 			assertNull(e.getCause());
 		}
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			ReactiveBlockingException e = assertThrows(ReactiveBlockingException.class, () -> ReactiveBlockingException.block(new ArithmeticException()));
-			assertTrue(c.scope().blocked());
+			assertTrue(s.blocked());
 			assertNull(e.getMessage());
 			assertThat(e.getCause(), instanceOf(ArithmeticException.class));
 		}
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			ReactiveBlockingException e = assertThrows(ReactiveBlockingException.class, () -> ReactiveBlockingException.block("message", new ArithmeticException()));
-			assertTrue(c.scope().blocked());
+			assertTrue(s.blocked());
 			assertEquals("message", e.getMessage());
 			assertThat(e.getCause(), instanceOf(ArithmeticException.class));
 		}

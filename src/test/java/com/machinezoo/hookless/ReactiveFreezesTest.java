@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.*;
+import com.machinezoo.noexception.*;
 
 public class ReactiveFreezesTest {
 	private final ReactiveFreezes f = new ReactiveFreezes();
@@ -49,12 +50,13 @@ public class ReactiveFreezesTest {
 	// Frozen ReactiveValue of course includes the blocking flag.
 	@Test
 	public void captureBlocking() {
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		ReactiveScope s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			assertEquals("value", f.freeze("key", () -> {
 				CurrentReactiveScope.block();
 				return "value";
 			}));
-			assertTrue(c.scope().blocked());
+			assertTrue(s.blocked());
 			assertTrue(f.get("key").blocking());
 		}
 	}
@@ -62,19 +64,20 @@ public class ReactiveFreezesTest {
 	// This is a contrived example using explicit manipulation API. See below for a realistic example.
 	@Test
 	public void propagateBlocking() {
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		ReactiveScope s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			f.set("key", new ReactiveValue<>("value", true));
-			assertFalse(c.scope().blocked());
+			assertFalse(s.blocked());
 			f.freeze("key", () -> "other");
-			assertTrue(c.scope().blocked());
+			assertTrue(s.blocked());
 		}
 	}
 	// This is a realistic example of blocking flag propagation.
 	@Test
 	public void blockingScenario() {
 		// Consider two nested scopes. The inner one is non-blocking. The two share one ReactiveFreezes object.
-		try (ReactiveScope.Computation c1 = new ReactiveScope().enter()) {
-			try (ReactiveScope.Computation c2 = ReactiveScope.nonblocking()) {
+		try (CloseableScope c1 = new ReactiveScope().enter()) {
+			try (CloseableScope c2 = ReactiveScope.nonblocking()) {
 				// Blocking freeze of course marks the inner scope as blocked.
 				assertEquals("value", CurrentReactiveScope.freeze("key", () -> {
 					CurrentReactiveScope.block();

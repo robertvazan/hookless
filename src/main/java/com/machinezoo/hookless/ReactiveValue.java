@@ -5,6 +5,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
+import com.machinezoo.noexception.*;
 import com.machinezoo.stagean.*;
 
 /*
@@ -169,7 +170,7 @@ public class ReactiveValue<T> {
 			 * Some code, especially tests, runs without reactive scope but still needs to capture blocking flag.
 			 * We will create temporary scope for such cases. Everything in the scope is discarded except the blocking flag.
 			 */
-			try (ReactiveScope.Computation computation = new ReactiveScope().enter()) {
+			try (CloseableScope computation = new ReactiveScope().enter()) {
 				return captureScoped(supplier);
 			}
 		}

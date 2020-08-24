@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import org.junit.jupiter.api.*;
+import com.machinezoo.noexception.*;
 
 public class ReactiveLazyTest {
 	@Test
@@ -42,7 +43,7 @@ public class ReactiveLazyTest {
 		// Blocking values are cached too and blocking is repeatedly propagated.
 		v.value(new ReactiveValue<>("hi", true));
 		for (int i = 0; i < 2; ++i) {
-			try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+			try (CloseableScope c = new ReactiveScope().enter()) {
 				assertEquals("hi", l.get());
 				assertTrue(CurrentReactiveScope.blocked());
 			}
@@ -54,9 +55,10 @@ public class ReactiveLazyTest {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		ReactiveLazy<String> l = new ReactiveLazy<>(() -> v.get());
 		try (ReactiveTrigger t = new ReactiveTrigger()) {
-			try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+			ReactiveScope s = new ReactiveScope();
+			try (CloseableScope c = s.enter()) {
 				assertEquals("hello", l.get());
-				t.arm(c.scope().versions());
+				t.arm(s.versions());
 			}
 			assertFalse(t.fired());
 			// Dependency invalidation is immediately propagated to dependent computations.

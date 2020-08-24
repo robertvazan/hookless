@@ -4,6 +4,7 @@ package com.machinezoo.hookless;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.*;
+import com.machinezoo.noexception.*;
 
 public class ReactiveValueTest {
 	@Test
@@ -84,9 +85,10 @@ public class ReactiveValueTest {
 		CompletionException ce = assertThrows(CompletionException.class, () -> new ReactiveValue<>(ex).get());
 		assertSame(ex, ce.getCause());
 		// Blocking flag is propagated.
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		ReactiveScope s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			new ReactiveValue<>("hello", true).get();
-			assertTrue(c.scope().blocked());
+			assertTrue(s.blocked());
 		}
 	}
 	@Test
@@ -99,13 +101,14 @@ public class ReactiveValueTest {
 			throw ex;
 		}));
 		// Capture blocking.
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		ReactiveScope s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			assertEquals(new ReactiveValue<>("hello", true), ReactiveValue.capture(() -> {
 				CurrentReactiveScope.block();
 				return "hello";
 			}));
 			// Allow the blocking to be observed by current computation.
-			assertTrue(c.scope().blocked());
+			assertTrue(s.blocked());
 		}
 	}
 }

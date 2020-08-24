@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import org.junit.jupiter.api.*;
+import com.machinezoo.noexception.*;
 
 public class ReactiveVariableTest {
 	@Test
@@ -58,10 +59,11 @@ public class ReactiveVariableTest {
 	public void trackAccess() {
 		ReactiveVariable<String> v = new ReactiveVariable<>("hello");
 		// Use ReactiveScope to detect variable access.
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		ReactiveScope s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			assertEquals("hello", v.get());
 			// Variable access has been observed.
-			assertSame(v, c.scope().versions().stream().findFirst().get().variable());
+			assertSame(v, s.versions().stream().findFirst().get().variable());
 		}
 	}
 	@Test
@@ -75,9 +77,10 @@ public class ReactiveVariableTest {
 		CompletionException ce = assertThrows(CompletionException.class, () -> new ReactiveVariable<>(new ReactiveValue<>(ex)).get());
 		assertSame(ex, ce.getCause());
 		// Store and propagate blocking flag.
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		ReactiveScope s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			assertEquals("value", new ReactiveVariable<>(new ReactiveValue<>("value", true)).get());
-			assertTrue(c.scope().blocked());
+			assertTrue(s.blocked());
 		}
 		// Fire trigger when assigning ReactiveValue.
 		try (ReactiveTrigger t = new ReactiveTrigger()) {
@@ -89,10 +92,11 @@ public class ReactiveVariableTest {
 			assertEquals(1, c.get());
 		}
 		// Track dependency when reading the variable as a ReactiveValue.
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			ReactiveVariable<String> v = new ReactiveVariable<>("value");
 			assertEquals(new ReactiveValue<>("value"), v.value());
-			assertSame(v, c.scope().versions().stream().findFirst().get().variable());
+			assertSame(v, s.versions().stream().findFirst().get().variable());
 		}
 	}
 	@Test

@@ -189,7 +189,7 @@ public class ReactiveThread {
 			pins = null;
 		}
 		Throwable exception = null;
-		try (ReactiveScope.Computation computation = scope.enter()) {
+		try (CloseableScope computation = scope.enter()) {
 			try {
 				try {
 					current.set(this);

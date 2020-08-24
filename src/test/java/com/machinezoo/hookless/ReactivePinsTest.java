@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.*;
+import com.machinezoo.noexception.*;
 
 public class ReactivePinsTest {
 	// This test is very similar to the one for ReactiveFreezes, but it's not the same as the two classes behave differently.
@@ -49,13 +50,14 @@ public class ReactivePinsTest {
 	}
 	@Test
 	public void blocking() {
-		try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+		ReactiveScope s = new ReactiveScope();
+		try (CloseableScope c = s.enter()) {
 			// Contrary to freezing, pinning does not capture blocking. Pinning is instead disabled when blocking.
 			assertEquals("value", p.pin("key", () -> {
 				CurrentReactiveScope.block();
 				return "value";
 			}));
-			assertTrue(c.scope().blocked());
+			assertTrue(s.blocked());
 			assertThat(p.keys(), is(empty()));
 			// The same applies to pre-existing blocking condition.
 			assertEquals("other", p.pin("key", () -> "other"));

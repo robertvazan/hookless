@@ -8,6 +8,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 import org.junit.jupiter.api.*;
+import com.machinezoo.noexception.*;
 
 public class ReactiveStateMachineTest {
 	@Test
@@ -131,17 +132,19 @@ public class ReactiveStateMachineTest {
 		// Initially, valid() and output() have their starting values and no reactive invalidation is signaled.
 		BiFunction<Boolean, String, Triggers> check = (vs, o) -> {
 			Triggers t = new Triggers();
-			try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+			ReactiveScope s = new ReactiveScope();
+			try (CloseableScope c = s.enter()) {
 				assertEquals(vs, sm.valid());
 				// Accessing valid() never blocks even if the inner computation blocks.
 				assertFalse(CurrentReactiveScope.blocked());
-				t.v.arm(c.scope().versions());
+				t.v.arm(s.versions());
 			}
-			try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+			s = new ReactiveScope();
+			try (CloseableScope c = s.enter()) {
 				assertEquals(new ReactiveValue<>(o), sm.output());
 				// Accessing output() never blocks even if the inner computation blocks.
 				assertFalse(CurrentReactiveScope.blocked());
-				t.o.arm(c.scope().versions());
+				t.o.arm(s.versions());
 			}
 			// There are no reactive invalidations without cause.
 			assertFalse(t.v.fired());
@@ -150,12 +153,13 @@ public class ReactiveStateMachineTest {
 		};
 		Triggers t = check.apply(false, "initial");
 		Runnable advance = () -> {
-			try (ReactiveScope.Computation c = new ReactiveScope().enter()) {
+			ReactiveScope s = new ReactiveScope();
+			try (CloseableScope c = s.enter()) {
 				sm.advance();
 				// Advancing the state machine never blocks even if the inner computation blocks.
 				assertFalse(CurrentReactiveScope.blocked());
 				try (ReactiveTrigger at = new ReactiveTrigger()) {
-					at.arm(c.scope().versions());
+					at.arm(s.versions());
 					// Advancing the state machine never invalidates the current computation.
 					assertFalse(at.fired());
 				}
