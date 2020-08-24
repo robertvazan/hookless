@@ -87,13 +87,13 @@ public class ReactiveExecutorTest extends TestBase {
 	}
 	@RepeatFailedTest(10)
 	public void parallelism() {
-		// Submit 300ms worth of 1ms tasks.
+		// Submit 300ms worth of 10ms tasks.
 		AtomicInteger n = new AtomicInteger();
-		int tc = 300 * Runtime.getRuntime().availableProcessors();
+		int tc = 30 * Runtime.getRuntime().availableProcessors();
 		long t0 = System.nanoTime();
 		for (int i = 0; i < tc; ++i) {
 			x.execute(() -> {
-				waste(Duration.ofMillis(1));
+				waste(Duration.ofMillis(10));
 				n.incrementAndGet();
 			});
 		}
@@ -101,9 +101,9 @@ public class ReactiveExecutorTest extends TestBase {
 		// Expect them to complete in 150% of the minimum time, which proves they run in parallel.
 		assertThat(Duration.ofNanos(System.nanoTime() - t0).toMillis(), lessThan(450L));
 	}
-	// Simulation of cascading tasks, each taking 1ms.
+	// Simulation of cascading tasks, each taking 5ms.
 	private void cascade(int depth, Runnable then) {
-		waste(Duration.ofMillis(1));
+		waste(Duration.ofMillis(5));
 		if (depth <= 1)
 			then.run();
 		else
@@ -111,7 +111,7 @@ public class ReactiveExecutorTest extends TestBase {
 	}
 	@RepeatFailedTest(10)
 	public void latency() throws Exception {
-		// Start 30ms long task cascade. This coincides with executor's maximum cascade depth of 30.
+		// Start 150ms 30-task cascade. This coincides with executor's maximum cascade depth of 30.
 		AtomicReference<Duration> latency = new AtomicReference<>();
 		long t0 = System.nanoTime();
 		x.execute(() -> cascade(30, () -> latency.set(Duration.ofNanos(System.nanoTime() - t0))));
@@ -119,15 +119,15 @@ public class ReactiveExecutorTest extends TestBase {
 		await().until(() -> x.getEventCount() > 0);
 		// The cascade has not completed yet.
 		assertNull(latency.get());
-		// Swamp the executor with 300ms worth of work.
-		int tc = 300 * Runtime.getRuntime().availableProcessors();
+		// Swamp the executor with 500ms worth of work.
+		int tc = 50 * Runtime.getRuntime().availableProcessors();
 		for (int i = 0; i < tc; ++i)
-			x.execute(() -> waste(Duration.ofMillis(1)));
+			x.execute(() -> waste(Duration.ofMillis(10)));
 		// Latency of the cascading task remains low.
 		await().untilAtomic(latency, notNullValue());
 		long ms = latency.get().toMillis();
-		assertThat(ms, greaterThan(30L));
-		assertThat(ms, lessThan(45L));
+		assertThat(ms, greaterThan(150L));
+		assertThat(ms, lessThan(225L));
 	}
 	@Test
 	public void current() throws Exception {
