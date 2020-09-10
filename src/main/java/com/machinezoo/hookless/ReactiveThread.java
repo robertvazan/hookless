@@ -241,6 +241,7 @@ public class ReactiveThread {
 			trigger.arm(scope.versions());
 		}
 	}
+	@DraftCode("handle RejectedExecutionException")
 	private void schedule() {
 		/*
 		 * Include scheduling latency in execution time. Latency is what we care about in UIs.
