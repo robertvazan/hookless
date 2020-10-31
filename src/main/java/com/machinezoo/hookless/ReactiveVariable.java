@@ -8,22 +8,28 @@ import com.machinezoo.stagean.*;
 import io.opentracing.*;
 import io.opentracing.util.*;
 
-/*
- * Reactive variable can either hold value directly or it can be used as a bridge
- * by event-driven code to communicate changes to the hookless world.
- * That is accomplished by creating ReactiveVariable<Object> and calling set(new Object()).
- * 
- * Reactive variable is thus a universal reactive primitive rather than just one kind of reactive data source.
- * We are referencing it directly in reactive scope and reactive trigger instead of indirect references via abstract base class.
- * All other reactive data sources internally use reactive variable either to directly store state or to trigger invalidations.
- */
 /**
- * Reactive container for single value.
+ * Reactive data source holding single {@link ReactiveValue}.
+ * Changes can be observed by using {@link ReactiveTrigger} directly or
+ * by implementing reactive computation using one of the higher level APIs, for example {@link ReactiveThread}.
+ * <p>
+ * {@link ReactiveVariable} is also used as a bridge between event-driven code and hookless-based code.
+ * Event-driven code can instantiate {@code ReactiveVariable<Object>} and call {@code set(new Object())}
+ * on it whenever it wants to wake up dependent reactive computations.
+ * <p>
+ * {@link ReactiveVariable} is thus a universal reactive primitive rather than just one kind of reactive data source.
+ * It is referenced directly in {@link ReactiveScope} and {@link ReactiveTrigger}.
+ * All other reactive data sources internally use {@code ReactiveVariable} either to directly store state or to trigger invalidations.
+ * <p>
+ * {@link ReactiveVariable} is thread-safe. All methods are safe to call concurrently from multiple threads.
  * 
  * @param <T>
  *            type of the stored value
+ * 
+ * @see ReactiveTrigger
+ * @see ReactiveCollections
  */
-@StubDocs
+@DraftDocs("link to docs for reactive data sources, reactive computation, reactive blocking")
 public class ReactiveVariable<T> {
 	/*
 	 * There is no perfect solution for equality testing, so we resort to configuration.
@@ -40,18 +46,45 @@ public class ReactiveVariable<T> {
 	 * Since there are sufficiently many situations where it could be useful, we expose it as a configurable option.
 	 * 
 	 * Other options (not offered):
-	 * - no equality testing: unnecessarily wasteful, reference equality already cheap enough
+	 * - no equality testing: unnecessarily wasteful, reference equality is already cheap enough
 	 */
 	private volatile boolean equality = true;
+	/**
+	 * Returns {@code true} if this {@link ReactiveVariable} performs full equality check on assignment.
+	 * This method merely returns what was last passed to {@link #equality(boolean)}. Defaults to {@code true}.
+	 * 
+	 * @return {@code true} if full equality check is enabled, {@code false} if reference equality is used
+	 * 
+	 * @see #equality(boolean)
+	 * @see ReactiveValue#equals(Object)
+	 * @see ReactiveValue#same(ReactiveValue)
+	 */
 	public boolean equality() {
 		return equality;
 	}
+	/**
+	 * Configures full or reference equality.
+	 * When this {@link ReactiveVariable} is assigned, dependent reactive computations are notified about the change if there is any.
+	 * In order to check whether the stored value has changed, {@link ReactiveVariable} can either perform
+	 * full equality check via {@link ReactiveValue#equals(Object)}
+	 * or simple reference equality check via {@link ReactiveValue#same(ReactiveValue)}.
+	 * This method can be used to configure which equality test is used. Default is to do full equality check.
+	 * <p>
+	 * This method should be called before the {@link ReactiveVariable} is used for the first time.
+	 * 
+	 * @param equality
+	 *            {@code true} to do full equality check, {@code false} to test only reference equality
+	 * @return {@code this} (fluent method)
+	 * 
+	 * @see #equality()
+	 * @see ReactiveValue#equals(Object)
+	 * @see ReactiveValue#same(ReactiveValue)
+	 */
 	public ReactiveVariable<T> equality(boolean equality) {
 		this.equality = equality;
 		return this;
 	}
 	/*
-	 * Every reactive variable has an associated version number, which is incremented after every change.
 	 * We start with version 1, so that we can use 0 as a special value elsewhere, especially in reactive scope's dependency map.
 	 * 
 	 * The alternative solution, one used in past versions of hookless, is to have a version object.
@@ -62,6 +95,16 @@ public class ReactiveVariable<T> {
 	 * Version numbers might also improve performance of dependency tracking a tiny bit.
 	 */
 	private volatile long version = 1;
+	/**
+	 * Returns current version of this {@link ReactiveVariable}.
+	 * Every {@link ReactiveVariable} has an associated version number, which is incremented after every change. Initial version is 1.
+	 * Version number does not change if there was no actual change as determined by {@link #equality()} setting.
+	 * Reading the version number with this method does not create reactive dependency on the {@link ReactiveVariable}.
+	 * 
+	 * @return current version of this {@link ReactiveVariable}
+	 * 
+	 * @see Version
+	 */
 	public long version() {
 		return version;
 	}
@@ -71,25 +114,84 @@ public class ReactiveVariable<T> {
 	 */
 	/**
 	 * Reference to particular version of {@link ReactiveVariable}.
+	 * Version of the {@link ReactiveVariable} is already exposed via {@link ReactiveVariable#version()}.
+	 * This is just a convenience wrapper.
+	 * It represents particular version of particular {@link ReactiveVariable}.
+	 * 
+	 * @see ReactiveVariable#version()
 	 */
 	public static class Version {
 		private final ReactiveVariable<?> variable;
+		/**
+		 * Returns the {@link ReactiveVariable} this is a version of.
+		 * This is the {@link ReactiveVariable} that was passed to the constructor.
+		 * 
+		 * @return {@link ReactiveVariable} this object is a version of
+		 */
 		public ReactiveVariable<?> variable() {
 			return variable;
 		}
 		private final long number;
+		/**
+		 * Returns the version number of the version this object represents.
+		 * This is the version number that was passed to the constructor
+		 * or determined at construction time by calling {@link ReactiveVariable#version()}.
+		 * 
+		 * @return version number of the version this object represents
+		 * 
+		 * @see ReactiveVariable#version()
+		 */
 		public long number() {
 			return number;
 		}
+		/**
+		 * Creates new {@link Version} object representing specified version of the {@link ReactiveVariable}.
+		 * This constructor is useful in rare cases,
+		 * for example when multiple versions have to be merged by taking minimum or maximum.
+		 * Constructor {@link #Version(ReactiveVariable)} should be used when just capturing current version.
+		 * <p>
+		 * Return values of {@link ReactiveVariable#version()} are always positive.
+		 * The {@code version} parameter of this constructor additionally allows special zero value.
+		 * 
+		 * @param variable
+		 *            {@link ReactiveVariable} that will have its version tracked by this object
+		 * @param version
+		 *            non-negative version number tracked by this object
+		 * @throws NullPointerException
+		 *             if {@code variable} is {@code null}
+		 * @throws IllegalArgumentException
+		 *             if {@code version} is negative
+		 */
 		public Version(ReactiveVariable<?> variable, long version) {
+			Objects.requireNonNull(variable);
+			if (version < 0)
+				throw new IllegalArgumentException();
 			this.variable = variable;
 			number = version;
 		}
+		/**
+		 * Creates new {@link Version} object representing current version of {@link ReactiveVariable}.
+		 * Current version is determined by calling {@link ReactiveVariable#version()}.
+		 * Constructor {@link #Version(ReactiveVariable, long)} can be used to specify different version number.
+		 * 
+		 * @param variable
+		 *            {@link ReactiveVariable} that will have its version tracked by this object
+		 * @throws NullPointerException
+		 *             if {@code variable} is {@code null}
+		 */
 		public Version(ReactiveVariable<?> variable) {
 			this(variable, variable.version);
 		}
 		/*
 		 * Make version objects directly comparable.
+		 */
+		/**
+		 * Compares this version with another {@link Version}.
+		 * Two versions are equal if they the same {@link #variable()} and {@link #number()}.
+		 * 
+		 * @param obj
+		 *            object to compare this version to
+		 * @return {@code true} if {@code obj} represents the same version, {@code false} otherwise
 		 */
 		@Override
 		public boolean equals(Object obj) {
@@ -100,10 +202,23 @@ public class ReactiveVariable<T> {
 			Version other = (Version)obj;
 			return variable() == other.variable() && number == other.number;
 		}
+		/**
+		 * Calculates hash code of this version.
+		 * Hash code incorporates {@link #variable()} identity and version {@link #number}.
+		 * 
+		 * @return hash code of this {@link Version}
+		 */
 		@Override
 		public int hashCode() {
 			return Objects.hash(variable(), number);
 		}
+		/**
+		 * Returns diagnostic string representation of this version.
+		 * {@link ReactiveVariable} and its {@link ReactiveValue} is included in the result,
+		 * but no reactive dependency is created by calling this method.
+		 * 
+		 * @return string representation of this version
+		 */
 		@Override
 		public String toString() {
 			return "Version " + number + " of " + variable;
@@ -166,6 +281,24 @@ public class ReactiveVariable<T> {
 	 * The value field is never null.
 	 */
 	private volatile ReactiveValue<T> value;
+	/**
+	 * Reads the current {@link ReactiveValue} from this {@link ReactiveVariable} and sets up reactive dependency.
+	 * <p>
+	 * This {@link ReactiveVariable} is recorded as a dependency in current {@link ReactiveScope}
+	 * (as identified by {@link ReactiveScope#current()}.
+	 * If there is no current {@link ReactiveScope}, no dependency is recorded
+	 * and this method just returns the {@link ReactiveValue}.
+	 * <p>
+	 * {@link ReactiveValue}'s {@link ReactiveValue#get()} is not called,
+	 * so reactive blocking and exception, if any, are not propagated.
+	 * They are left encapsulated in the returned {@link ReactiveValue}.
+	 * Call {@link #get()} if propagation of reactive blocking and exceptions is desirable.
+	 * 
+	 * @return current {@link ReactiveValue} of this {@link ReactiveVariable}, never {@code null}
+	 * 
+	 * @see #get()
+	 * @see #value(ReactiveValue)
+	 */
 	public ReactiveValue<T> value() {
 		/*
 		 * This is what makes the variable reactive. We let reactive scope track the variable as a dependency.
@@ -183,6 +316,30 @@ public class ReactiveVariable<T> {
 		 */
 		return value;
 	}
+	/**
+	 * Sets current {@link ReactiveValue} of this {@link ReactiveVariable} and notifies dependent reactive computations.
+	 * This is the more general version of {@link #set(Object)} that allows setting arbitrary {@link ReactiveValue}.
+	 * <p>
+	 * The {@code value} may have {@link ReactiveValue#blocking()} flag set and it may contain {@link ReactiveValue#exception()}.
+	 * This is useful in situations when {@link ReactiveVariable} is used as a bridge between hookless-based code and event-driven code.
+	 * The event-driven code may signal that it is not yet ready by setting its {@link ReactiveVariable} to blocking value.
+	 * It may also communicate exceptions reactively by wrapping them in {@link ReactiveValue} and storing it in {@link ReactiveVariable}.
+	 * <p>
+	 * If current {@link ReactiveValue} is actually changed as determined by {@link #equality()} setting,
+	 * {@link #version()} is incremented and dependent reactive computations
+	 * (the ones that accessed {@link #value()} or {@link #get()}) are notified about the change.
+	 * If there is no actual change (new value compares equal to the old value per {@link #equality()} setting),
+	 * then the state of this {@link ReactiveVariable} does not change, old {@link ReactiveValue} is kept,
+	 * {@link #version()} remains the same, and no change notifications are sent.
+	 * 
+	 * @param value
+	 *            new {@link ReactiveValue} to store in this {@link ReactiveVariable}
+	 * @throws NullPointerException
+	 *             if {@code value} is {@code null}
+	 * 
+	 * @see #set(Object)
+	 * @see #value()
+	 */
 	public void value(ReactiveValue<T> value) {
 		Objects.requireNonNull(value);
 		/*
@@ -203,7 +360,7 @@ public class ReactiveVariable<T> {
 			synchronized (this) {
 				/*
 				 * It is important to avoid assigning new value when equality test is positive.
-				 * Value change must happen only if there is a corresponding version change.
+				 * Value change must happen only if there is corresponding version change.
 				 * Otherwise consecutive reads from the variable could return different objects for the same version.
 				 * This would cause numerous such objects to be cached in dependent caches for a long time, wasting memory.
 				 * 
@@ -262,6 +419,13 @@ public class ReactiveVariable<T> {
 	 * This check is implemented as a hash lookup. Providing fast hashCode() implementation speeds it up considerably.
 	 */
 	private final int hashCode = ThreadLocalRandom.current().nextInt();
+	/**
+	 * Returns identity hash code.
+	 * This implementation is semantically identical to {@link Object#hashCode()}.
+	 * It is just a little faster in order to speed up operations that use {@link ReactiveVariable} as a key in {@link Map}.
+	 * 
+	 * @return identity hash code
+	 */
 	@Override
 	public int hashCode() {
 		return hashCode;
@@ -278,47 +442,121 @@ public class ReactiveVariable<T> {
 	 * This is because setting blocking flag inside of a reactive variable might be surprising and result in subtle bugs.
 	 * Most uses of set() intend to set non-blocking value. When blocking is intended, callers can use value(...) method instead.
 	 */
+	/**
+	 * Returns the value held by this {@link ReactiveVariable}.
+	 * In most situations, this is the more convenient alternative to {@link #value()}.
+	 * It is equivalent to calling {@link #value()} and then calling {@link ReactiveValue#get()} on the returned {@link ReactiveValue}.
+	 * <p>
+	 * If the stored {@link ReactiveValue} has {@link ReactiveValue#blocking()} flag set,
+	 * reactive blocking is propagated into current {@link ReactiveScope} if there is any.
+	 * If the stored {@link ReactiveValue} holds an exception, the exception is propagated wrapped in {@link CompletionException}.
+	 * Otherwise this method just returns {@link ReactiveValue#result()}.
+	 * <p>
+	 * This {@link ReactiveVariable} is recorded as a dependency in current {@link ReactiveScope}
+	 * (as identified by {@link ReactiveScope#current()} if there is any.
+	 * 
+	 * @throws CompletionException
+	 *             if the stored {@link ReactiveValue} holds an exception
+	 * 
+	 * @return current value stored in this {@link ReactiveVariable}
+	 * 
+	 * @see #value()
+	 * @see ReactiveValue#get()
+	 * @see #set(Object)
+	 */
 	public T get() {
 		return value().get();
 	}
-	public void set(T result) {
-		value(new ReactiveValue<>(result));
+	/**
+	 * Sets current value of this {@link ReactiveVariable}.
+	 * In most situations, this is the more convenient alternative to {@link #value(ReactiveValue)}.
+	 * It is equivalent to wrapping {@code value} in {@link ReactiveValue} and passing it to {@link #value(ReactiveValue)}.
+	 * <p>
+	 * If current {@link ReactiveValue} is actually changed as determined by {@link #equality()} setting,
+	 * {@link #version()} is incremented and dependent reactive computations
+	 * (the ones that accessed {@link #value()} or {@link #get()}) are notified about the change.
+	 * Note that change is detected if the old {@link ReactiveValue} has
+	 * {@link ReactiveValue#blocking()} flag set or if it holds an exception ({@link ReactiveValue#exception()}).
+	 * If there is no actual change (new {@link ReactiveValue} compares equal to the old {@link ReactiveValue} per {@link #equality()} setting),
+	 * then the state of this {@link ReactiveVariable} does not change, old {@link ReactiveValue} is kept,
+	 * {@link #version()} remains the same, and no change notifications are sent.
+	 * 
+	 * @param value
+	 *            new value to store in this {@link ReactiveVariable}
+	 * 
+	 * @see #value(ReactiveValue)
+	 * @see ReactiveValue#ReactiveValue(Object)
+	 * @see #get()
+	 */
+	public void set(T value) {
+		value(new ReactiveValue<>(value));
 	}
 	/*
 	 * We provide some convenience constructors. Besides convenience, they are also faster than writing the variable after construction.
+	 */
+	/**
+	 * Creates new instance holding specified {@link ReactiveValue}.
+	 * 
+	 * @param value
+	 *            initial value of the {@link ReactiveVariable}
+	 * @throws NullPointerException
+	 *             if {@code value} is {@code null}
 	 */
 	public ReactiveVariable(ReactiveValue<T> value) {
 		Objects.requireNonNull(value);
 		this.value = value;
 		OwnerTrace.of(this).alias("var");
 	}
-	public ReactiveVariable(T result) {
-		this(new ReactiveValue<>(result));
+	/**
+	 * Creates new instance holding specified {@code value}.
+	 * The {@link ReactiveValue} in the new {@link ReactiveVariable} will have {@code false} {@link ReactiveValue#blocking()} flag.
+	 * 
+	 * @param value
+	 *            initial value of the {@link ReactiveVariable}
+	 */
+	public ReactiveVariable(T value) {
+		this(new ReactiveValue<>(value));
 	}
+	/**
+	 * Creates new instance with {@code null} value.
+	 * The new {@link ReactiveVariable} will contain {@link ReactiveValue} with {@code null} {@link ReactiveValue#result()}.
+	 */
 	public ReactiveVariable() {
 		this(new ReactiveValue<>());
 	}
-	/*
-	 * When reactive variable is embedded in another reactive object,
-	 * oftentimes it is the only thing that has strong references pointing to it.
-	 * This causes trouble when the reactive variable is supposed to be updated by something
-	 * that has only weak references pointing to it and it gets garbage collected.
-	 * The variable is then never updated and reactivity is lost.
-	 * 
-	 * This is particularly true of any higher-level object holding reactive trigger.
-	 * When the higher-level object is collected, the trigger is too, and it never fires.
-	 * 
-	 * In order to prevent premature collection, such high-level objects should call keepalive()
-	 * on the reactive variable passing themselves as the parameter.
-	 * This should be done even if the high-level object doesn't use weakrefs itself,
-	 * because weakrefs could be introduced at yet higher level.
-	 */
 	@SuppressWarnings("unused")
 	private Object keepalive;
+	/**
+	 * Adds strong reference to the specified target object.
+	 * This is sometimes useful to control garbage collection.
+	 * Only one target object is supported. If this method is called twice, the first target is discarded.
+	 * <p>
+	 * Hookless keeps strong references in the direction from reactive computations to their reactive dependencies
+	 * and weak references in opposite direction. This usually results in expected garbage collector behavior.
+	 * <p>
+	 * However, when {@link ReactiveVariable} is embedded in a higher level reactive object,
+	 * reactive computations hold strong references to the embedded {@link ReactiveVariable}
+	 * instead of pointing to the outer reactive object, which makes the outer object vulnerable to premature collection.
+	 * If the outer object is supposed to exist as long as its embedded {@link ReactiveVariable} is referenced,
+	 * for example when it has {@link ReactiveTrigger} subscribed to changes in the {@link ReactiveVariable},
+	 * the outer object should call this method on its embedded {@link ReactiveVariable}, passing itself as the target object.
+	 * This will ensure the outer object will live for as long as its embedded {@link ReactiveVariable}.
+	 * 
+	 * @param keepalive
+	 *            target object that will be strongly referenced by this {@link ReactiveVariable}
+	 * @return {@code this} (fluent method)
+	 */
 	public ReactiveVariable<T> keepalive(Object keepalive) {
 		this.keepalive = keepalive;
 		return this;
 	}
+	/**
+	 * Returns diagnostic string representation of this {@link ReactiveVariable}.
+	 * Stored {@link ReactiveValue} is included in the result,
+	 * but no reactive dependency is created by calling this method.
+	 * 
+	 * @return string representation of this {@link ReactiveVariable}
+	 */
 	@Override
 	public String toString() {
 		return OwnerTrace.of(this) + " = " + value;
