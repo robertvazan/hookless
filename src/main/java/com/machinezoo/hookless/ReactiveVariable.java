@@ -148,7 +148,7 @@ public class ReactiveVariable<T> {
 		 * Creates new {@link Version} object representing specified version of the {@link ReactiveVariable}.
 		 * This constructor is useful in rare cases,
 		 * for example when multiple versions have to be merged by taking minimum or maximum.
-		 * Constructor {@link #Version(ReactiveVariable)} should be used when just capturing current version.
+		 * Constructor {@link Version#Version(ReactiveVariable)} should be used when just capturing current version.
 		 * <p>
 		 * Return values of {@link ReactiveVariable#version()} are always positive.
 		 * The {@code version} parameter of this constructor additionally allows special zero value.
@@ -172,7 +172,7 @@ public class ReactiveVariable<T> {
 		/**
 		 * Creates new {@link Version} object representing current version of {@link ReactiveVariable}.
 		 * Current version is determined by calling {@link ReactiveVariable#version()}.
-		 * Constructor {@link #Version(ReactiveVariable, long)} can be used to specify different version number.
+		 * Constructor {@link Version#Version(ReactiveVariable, long)} can be used to specify different version number.
 		 * 
 		 * @param variable
 		 *            {@link ReactiveVariable} that will have its version tracked by this object
