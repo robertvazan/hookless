@@ -29,7 +29,7 @@ import io.opentracing.util.*;
  * @see ReactiveTrigger
  * @see ReactiveCollections
  */
-@DraftDocs("link to docs for reactive data sources, reactive computation, reactive blocking")
+@DraftDocs("link to docs for reactive data sources, reactive computation")
 public class ReactiveVariable<T> {
 	/*
 	 * There is no perfect solution for equality testing, so we resort to configuration.
@@ -292,7 +292,7 @@ public class ReactiveVariable<T> {
 	 * and this method just returns the {@link ReactiveValue}.
 	 * <p>
 	 * {@link ReactiveValue}'s {@link ReactiveValue#get()} is not called,
-	 * so reactive blocking and exception, if any, are not propagated.
+	 * so <a href="https://hookless.machinezoo.com/blocking">reactive blocking</a> and exception, if any, are not propagated.
 	 * They are left encapsulated in the returned {@link ReactiveValue}.
 	 * Call {@link #get()} if propagation of reactive blocking and exceptions is desirable.
 	 * 
@@ -324,7 +324,8 @@ public class ReactiveVariable<T> {
 	 * <p>
 	 * The {@code value} may have {@link ReactiveValue#blocking()} flag set and it may contain {@link ReactiveValue#exception()}.
 	 * This is useful in situations when {@link ReactiveVariable} is used as a bridge between hookless-based code and event-driven code.
-	 * The event-driven code may signal that it is not yet ready by setting its {@link ReactiveVariable} to blocking value.
+	 * The event-driven code may signal that it is not yet ready by setting its {@link ReactiveVariable}
+	 * to a <a href="https://hookless.machinezoo.com/blocking">blocking</a> value.
 	 * It may also communicate exceptions reactively by wrapping them in {@link ReactiveValue} and storing it in {@link ReactiveVariable}.
 	 * <p>
 	 * If current {@link ReactiveValue} is actually changed as determined by {@link #equality()} setting,
@@ -450,7 +451,7 @@ public class ReactiveVariable<T> {
 	 * It is equivalent to calling {@link #value()} and then calling {@link ReactiveValue#get()} on the returned {@link ReactiveValue}.
 	 * <p>
 	 * If the stored {@link ReactiveValue} has {@link ReactiveValue#blocking()} flag set,
-	 * reactive blocking is propagated into current {@link ReactiveScope} if there is any.
+	 * <a href="https://hookless.machinezoo.com/blocking">reactive blocking</a> is propagated into current {@link ReactiveScope} if there is any.
 	 * If the stored {@link ReactiveValue} holds an exception, the exception is propagated wrapped in {@link CompletionException}.
 	 * Otherwise this method just returns {@link ReactiveValue#result()}.
 	 * <p>

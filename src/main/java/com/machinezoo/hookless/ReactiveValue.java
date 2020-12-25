@@ -16,14 +16,16 @@ import com.machinezoo.stagean.*;
  * Better not say that in the javadoc as it might be more confusing than enlightening.
  */
 /**
- * Container for output of reactive computation consisting of return value, exception, and reactive blocking flag.
+ * Container for output of reactive computation consisting of return value, exception,
+ * and <a href="https://hookless.machinezoo.com/blocking">reactive blocking</a> flag.
  * {@code ReactiveValue} can be split into its constituent components by calling
  * {@link #result()}, {@link #exception()}, and {@link #blocking()}.
  * It can be recreated from these components by calling {@link #ReactiveValue(Object, Throwable, boolean)}
  * or some other constructor. {@code ReactiveValue} is immutable.
  * <p>
  * Reactive code usually takes the form of a method and communicates its output like a method,
- * i.e. via return value or an exception. Reactive code may additionally signal reactive blocking
+ * i.e. via return value or an exception. Reactive code may additionally signal
+ * <a href="https://hookless.machinezoo.com/blocking">reactive blocking</a>
  * by calling {@link CurrentReactiveScope#block()}.
  * Return value, exception, and signaling of reactive blocking constitutes implicit output of reactive computation.
  * {@code ReactiveValue} offers an explicit representation of the same.
@@ -38,7 +40,7 @@ import com.machinezoo.stagean.*;
  * @see ReactiveVariable
  * @see ReactiveScope
  */
-@DraftDocs("link to reactive blocking and reactive value/output articles")
+@DraftDocs("link to reactive value/output articles")
 public class ReactiveValue<T> {
 	private final T result;
 	/**
@@ -68,13 +70,14 @@ public class ReactiveValue<T> {
 	}
 	private final boolean blocking;
 	/**
-	 * Gets the reactive blocking flag from this {@code ReactiveValue}.
+	 * Gets the <a href="https://hookless.machinezoo.com/blocking">reactive blocking</a> flag from this {@code ReactiveValue}.
 	 * Blocking flag is set if this {@code ReactiveValue} represents output of reactive computation
 	 * that signaled blocking during its execution by calling {@link CurrentReactiveScope#block()}.
 	 * 
 	 * @return {@code true} if this {@code ReactiveValue} represents output of blocking reactive computation, {@code false} otherwise
 	 * 
 	 * @see #get()
+	 * @see <a href="https://hookless.machinezoo.com/blocking">Reactive blocking</a>
 	 */
 	public boolean blocking() {
 		return blocking;
@@ -84,7 +87,7 @@ public class ReactiveValue<T> {
 	 * We decide to throw, because this is unlikely to be accidental. It is nearly always indicative of a bug.
 	 */
 	/**
-	 * Constructs new {@code ReactiveValue} from return value, exception, and reactive blocking flag.
+	 * Constructs new {@code ReactiveValue} from return value, exception, and <a href="https://hookless.machinezoo.com/blocking">reactive blocking</a> flag.
 	 * Only one of {@code result} and {@code exception} can be non-{@code null}.
 	 * The parameters can be later retrieved via {@link #result()}, {@link #exception()}, and {@link #blocking()}.
 	 * 
@@ -93,7 +96,8 @@ public class ReactiveValue<T> {
 	 * @param exception
 	 *            component representing exception thrown by reactive computation that can be later retrieved via {@link #exception()}
 	 * @param blocking
-	 *            {@code true} if the constructed {@code ReactiveValue} should represent blocking reactive computation, {@code false} otherwise
+	 *            {@code true} if the constructed {@code ReactiveValue} should represent
+	 *            <a href="https://hookless.machinezoo.com/blocking">blocking</a> reactive computation, {@code false} otherwise
 	 * @throws IllegalArgumentException
 	 *             if both {@code result} and {@code exception} are non-{@code null}
 	 * 
@@ -141,7 +145,7 @@ public class ReactiveValue<T> {
 	 * If the {@code supplier} throws, returned {@code ReactiveValue} will have {@link #exception()} set to the caught exception.
 	 * Otherwise the {@code ReactiveValue} will have {@link #result()} set to value returned from the {@code supplier}.
 	 * <p>
-	 * If the {@code supplier} reactively blocks by calling {@link CurrentReactiveScope#block()},
+	 * If the {@code supplier} <a href="https://hookless.machinezoo.com/blocking">reactively blocks</a> by calling {@link CurrentReactiveScope#block()},
 	 * {@link #blocking()} flag will be set on the returned {@code ReactiveValue}.
 	 * This method obtains blocking flag by calling {@link CurrentReactiveScope#blocked()} after calling the {@code supplier},
 	 * which means the returned {@code ReactiveValue} will have {@link #blocking()} flag set also
@@ -298,7 +302,8 @@ public class ReactiveValue<T> {
 	 */
 	/**
 	 * Constructs new {@code ReactiveValue}.
-	 * The new {@code ReactiveValue} represents reactive computation that successfully completed with {@code null} result and without blocking.
+	 * The new {@code ReactiveValue} represents reactive computation that successfully completed with {@code null} result
+	 * and without <a href="https://hookless.machinezoo.com/blocking">blocking</a>.
 	 * The {@code ReactiveValue} will have {@code null} {@link #result()} and {@link #exception()} and {@code false} {@link #blocking()} flag.
 	 * 
 	 * @see #ReactiveValue(Object, Throwable, boolean)
@@ -308,7 +313,8 @@ public class ReactiveValue<T> {
 	}
 	/**
 	 * Constructs new {@code ReactiveValue} from return value.
-	 * The new {@code ReactiveValue} represents reactive computation that successfully completed without blocking.
+	 * The new {@code ReactiveValue} represents reactive computation that successfully completed
+	 * without <a href="https://hookless.machinezoo.com/blocking">blocking</a>.
 	 * The {@code ReactiveValue} will have {@code null} {@link #exception()} and {@code false} {@link #blocking()} flag.
 	 * 
 	 * @param result
@@ -321,7 +327,8 @@ public class ReactiveValue<T> {
 	}
 	/**
 	 * Constructs new {@code ReactiveValue} from exception.
-	 * The new {@code ReactiveValue} represents reactive computation that threw an exception without blocking.
+	 * The new {@code ReactiveValue} represents reactive computation that threw an exception
+	 * without <a href="https://hookless.machinezoo.com/blocking">blocking</a>.
 	 * The {@code ReactiveValue} will have {@code null} {@link #result()} and {@code false} {@link #blocking()} flag.
 	 * 
 	 * @param exception
@@ -333,14 +340,15 @@ public class ReactiveValue<T> {
 		this(null, exception, false);
 	}
 	/**
-	 * Constructs new {@code ReactiveValue} from return value and blocking flag.
+	 * Constructs new {@code ReactiveValue} from return value and <a href="https://hookless.machinezoo.com/blocking">blocking</a> flag.
 	 * The new {@code ReactiveValue} represents reactive computation that successfully completed and possibly signaled blocking.
 	 * The {@code ReactiveValue} will have {@code null} {@link #exception()}.
 	 * 
 	 * @param result
 	 *            return value of the reactive computation the new {@code ReactiveValue} represents
 	 * @param blocking
-	 *            {@code true} if the constructed {@code ReactiveValue} should represent blocking reactive computation, {@code false} otherwise
+	 *            {@code true} if the constructed {@code ReactiveValue} should represent
+	 *            <a href="https://hookless.machinezoo.com/blocking">blocking</a> reactive computation, {@code false} otherwise
 	 * 
 	 * @see #ReactiveValue(Object, Throwable, boolean)
 	 */
@@ -348,14 +356,15 @@ public class ReactiveValue<T> {
 		this(result, null, blocking);
 	}
 	/**
-	 * Constructs new {@code ReactiveValue} from exception and blocking flag.
+	 * Constructs new {@code ReactiveValue} from exception and <a href="https://hookless.machinezoo.com/blocking">blocking</a> flag.
 	 * The new {@code ReactiveValue} represents reactive computation that threw an exception and possibly signaled blocking.
 	 * The {@code ReactiveValue} will have {@code null} {@link #result()}.
 	 * 
 	 * @param exception
 	 *            exception thrown by the reactive computation the new {@code ReactiveValue} represents
 	 * @param blocking
-	 *            {@code true} if the constructed {@code ReactiveValue} should represent blocking reactive computation, {@code false} otherwise
+	 *            {@code true} if the constructed {@code ReactiveValue} should represent
+	 *            <a href="https://hookless.machinezoo.com/blocking">blocking</a> reactive computation, {@code false} otherwise
 	 * 
 	 * @see #ReactiveValue(Object, Throwable, boolean)
 	 */

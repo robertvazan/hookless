@@ -1,10 +1,8 @@
 // Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless;
 
-import com.machinezoo.stagean.*;
-
 /**
- * Default exception to throw when reactive code needs to reactively block.
+ * Default exception to throw when reactive code needs to <a href="https://hookless.machinezoo.com/blocking">reactively block</a>.
  * <p>
  * Merely creating or throwing this exception is not sufficient to indicate blocking.
  * Current reactive computation must be explicitly marked as blocked before throwing
@@ -24,8 +22,8 @@ import com.machinezoo.stagean.*;
  * 
  * @see ReactiveScope#block()
  * @see CurrentReactiveScope#block()
+ * @see <a href="https://hookless.machinezoo.com/blocking">Reactive blocking</a>
  */
-@DraftDocs("link to reactive blocking article")
 public class ReactiveBlockingException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 	/*
@@ -35,7 +33,8 @@ public class ReactiveBlockingException extends RuntimeException {
 	/**
 	 * Constructs new {@code ReactiveBlockingException} with the specified message and cause.
 	 * <p>
-	 * Merely calling this constructor does not block current {@link ReactiveScope}. Use {@link #block(String, Throwable)} for that.
+	 * Merely calling this constructor does not <a href="https://hookless.machinezoo.com/blocking">block</a>
+	 * current {@link ReactiveScope}. Use {@link #block(String, Throwable)} for that.
 	 * 
 	 * @param message
 	 *            informative message (possibly {@code null}) that can be later retrieved via {@link Throwable#getMessage()}
@@ -50,7 +49,8 @@ public class ReactiveBlockingException extends RuntimeException {
 	/**
 	 * Constructs new {@code ReactiveBlockingException} with the specified message.
 	 * <p>
-	 * Merely calling this constructor does not block current {@link ReactiveScope}. Use {@link #block(String)} for that.
+	 * Merely calling this constructor does not <a href="https://hookless.machinezoo.com/blocking">block</a>
+	 * current {@link ReactiveScope}. Use {@link #block(String)} for that.
 	 * 
 	 * @param message
 	 *            informative message (possibly {@code null}) that can be later retrieved via {@link Throwable#getMessage()}
@@ -64,7 +64,8 @@ public class ReactiveBlockingException extends RuntimeException {
 	 * Constructs new {@code ReactiveBlockingException} with the specified cause.
 	 * If {@code cause} is not {@code null}, message string of this exception will be set to {@code cause.toString()}.
 	 * <p>
-	 * Merely calling this constructor does not block current {@link ReactiveScope}. Use {@link #block(Throwable)} for that.
+	 * Merely calling this constructor does not <a href="https://hookless.machinezoo.com/blocking">block</a>
+	 * current {@link ReactiveScope}. Use {@link #block(Throwable)} for that.
 	 * 
 	 * @param cause
 	 *            cause of this exception (possibly {@code null}) that can be later retrieved via {@link Throwable#getCause()}
@@ -78,7 +79,8 @@ public class ReactiveBlockingException extends RuntimeException {
 	 * Constructs new {@code ReactiveBlockingException}.
 	 * The exception will have no message, i.e. it will return {@code null} from {@link Throwable#getMessage()}.
 	 * <p>
-	 * Merely calling this constructor does not block current {@link ReactiveScope}. Use {@link #block()} for that.
+	 * Merely calling this constructor does not <a href="https://hookless.machinezoo.com/blocking">block</a>
+	 * current {@link ReactiveScope}. Use {@link #block()} for that.
 	 * 
 	 * @see #block()
 	 */
@@ -91,7 +93,8 @@ public class ReactiveBlockingException extends RuntimeException {
 	 * They nevertheless declare exception return, so that callers can add throw clause to avoid issues with unreachable code.
 	 */
 	/**
-	 * Marks the current {@link ReactiveScope} as blocking and then throws {@code ReactiveBlockingException} with the specified message and cause.
+	 * Marks the current {@link ReactiveScope} as <a href="https://hookless.machinezoo.com/blocking">blocking</a>
+	 * and then throws {@code ReactiveBlockingException} with the specified message and cause.
 	 * Current reactive scope is blocked by calling {@link CurrentReactiveScope#block()}.
 	 * <p>
 	 * This method always throws and thus never returns. Declared return type is just a convenience
@@ -111,7 +114,8 @@ public class ReactiveBlockingException extends RuntimeException {
 		throw new ReactiveBlockingException(message, cause);
 	}
 	/**
-	 * Marks the current {@link ReactiveScope} as blocking and then throws {@code ReactiveBlockingException} with the specified message.
+	 * Marks the current {@link ReactiveScope} as <a href="https://hookless.machinezoo.com/blocking">blocking</a>
+	 * and then throws {@code ReactiveBlockingException} with the specified message.
 	 * Current reactive scope is blocked by calling {@link CurrentReactiveScope#block()}.
 	 * <p>
 	 * This method always throws and thus never returns. Declared return type is just a convenience
@@ -128,7 +132,8 @@ public class ReactiveBlockingException extends RuntimeException {
 		throw block(message, null);
 	}
 	/**
-	 * Marks the current {@link ReactiveScope} as blocking and then throws {@code ReactiveBlockingException} with the specified cause.
+	 * Marks the current {@link ReactiveScope} as <a href="https://hookless.machinezoo.com/blocking">blocking</a>
+	 * and then throws {@code ReactiveBlockingException} with the specified cause.
 	 * Current reactive scope is blocked by calling {@link CurrentReactiveScope#block()}.
 	 * <p>
 	 * This method always throws and thus never returns. Declared return type is just a convenience
@@ -145,7 +150,8 @@ public class ReactiveBlockingException extends RuntimeException {
 		throw block(null, cause);
 	}
 	/**
-	 * Marks the current {@link ReactiveScope} as blocking and then throws {@code ReactiveBlockingException}.
+	 * Marks the current {@link ReactiveScope} as <a href="https://hookless.machinezoo.com/blocking">blocking</a>
+	 * and then throws {@code ReactiveBlockingException}.
 	 * Current reactive scope is blocked by calling {@link CurrentReactiveScope#block()}.
 	 * <p>
 	 * This method always throws and thus never returns. Declared return type is just a convenience
