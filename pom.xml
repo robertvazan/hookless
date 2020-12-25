@@ -165,6 +165,9 @@
 					<!-- Make the CI server email us when we break javadoc. -->
 					<failOnWarnings>true</failOnWarnings>
 					<notimestamp>true</notimestamp>
+					<links>
+						<link>https://noexception.machinezoo.com/javadoc/</link>
+					</links>
 				</configuration>
 				<executions>
 					<execution>
