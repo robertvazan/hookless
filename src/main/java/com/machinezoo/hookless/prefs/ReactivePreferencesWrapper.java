@@ -236,15 +236,20 @@ class ReactivePreferencesWrapper extends AbstractReactivePreferences {
 		return prefs.get(key, null);
 	}
 	/*
-	 * Write methods rely on change notification for reactivity.
+	 * Write methods could rely on change notification for reactivity, but that would make all preferences asynchronous.
+	 * To spare callers of having to deal with reads lagging behind writes, we will invalidate keys explicitly here.
+	 * The downside is that now we will get two invalidations, one here and one in change listener.
+	 * We cannot remove the change listeners either, because we want to receive invalidations for writes performed by non-reactive code.
 	 */
 	@Override
 	protected void putSpi(String key, String value) {
 		materialize().put(key, value);
+		invalidateKey(key);
 	}
 	@Override
 	protected void removeSpi(String key) {
 		materialize().remove(key);
+		invalidateKey(key);
 	}
 	@Override
 	protected CompletableFuture<Void> flushSpi() {
