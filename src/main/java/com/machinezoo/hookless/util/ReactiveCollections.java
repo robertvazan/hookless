@@ -299,6 +299,11 @@ public class ReactiveCollections {
 			return inner.next();
 		}
 		@Override
+		public void remove() {
+			inner.remove();
+			invalidate();
+		}
+		@Override
 		public String toString() {
 			observe();
 			return OwnerTrace.of(this) + ": " + inner.toString();
