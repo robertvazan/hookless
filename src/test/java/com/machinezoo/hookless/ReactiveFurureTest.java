@@ -165,7 +165,7 @@ public class ReactiveFurureTest extends TestBase {
 		for (ReactiveStateMachine<?> sm : sms)
 			assertTrue(sm.valid());
 	}
-	@RepeatFailedTest(10)
+	@RetryingTest(10)
 	public void reactiveTimeout() {
 		Function<ReactiveFuture<String>, String> m1 = f -> f.get(Duration.ofMillis(50));
 		Function<ReactiveFuture<String>, String> m2 = f -> f.get(50, TimeUnit.MILLISECONDS);

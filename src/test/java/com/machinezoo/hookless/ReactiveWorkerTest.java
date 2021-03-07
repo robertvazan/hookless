@@ -78,7 +78,7 @@ public class ReactiveWorkerTest extends TestBase {
 		settle();
 		assertEquals(new ReactiveValue<>("nonblocking"), ReactiveValue.capture(w::get));
 	}
-	@RepeatFailedTest(10)
+	@RetryingTest(10)
 	public void initial() {
 		Supplier<String> s = () -> {
 			sleep(30);
