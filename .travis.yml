@@ -2,11 +2,6 @@
 # This avoids the spammy emails Travis sends every time some tag is built.
 if: tag IS blank
 language: java
-# Hookless targets Java8, but Java11 is needed to build it due to nested class references in javadoc.
-# Java8 bug: https://bugs.openjdk.java.net/browse/JDK-8031625
-# This bug is fixed in Java9 and there is a backport to Java8 since 8u272:
-# https://bugs.openjdk.java.net/browse/JDK-8249951
-# Unfortunately, Travis CI still uses Java 8u252, which will fail on such code.
 jdk:
   - openjdk11
 # Travis by default tries to install maven dependencies in this phase. It's simpler to run everything in one phase.

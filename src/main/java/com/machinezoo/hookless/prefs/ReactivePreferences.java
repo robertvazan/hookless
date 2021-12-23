@@ -94,7 +94,9 @@ public abstract class ReactivePreferences {
 	private static ReactivePreferencesFactory configure() {
 		String name = System.getProperty(ReactivePreferencesFactory.class.getName());
 		if (name != null)
-			return (ReactivePreferencesFactory)Exceptions.wrap(ex -> new TypeNotPresentException(name, ex)).get(() -> Class.forName(name).newInstance());
+			return (ReactivePreferencesFactory)Exceptions
+				.wrap(ex -> new TypeNotPresentException(name, ex))
+				.get(() -> Class.forName(name).getDeclaredConstructor().newInstance());
 		for (ReactivePreferencesFactory factory : ServiceLoader.load(ReactivePreferencesFactory.class))
 			return factory;
 		return ReactivePreferencesFactoryWrapper.instance;
