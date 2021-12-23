@@ -116,6 +116,10 @@
 					<!-- Older surefire versions did not support JUnit 5. -->
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>2.22.2</version>
+					<configuration>
+						<!-- JUnit requires reflective access, e.g. to process private @MethodSource. -->
+						<argLine>--add-opens com.machinezoo.hookless/com.machinezoo.hookless=ALL-UNNAMED</argLine>
+					</configuration>
 				</plugin>
 			</plugins>
 		</pluginManagement>
