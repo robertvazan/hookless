@@ -14,9 +14,19 @@ module com.machinezoo.hookless {
 	exports com.machinezoo.hookless.time;
 	exports com.machinezoo.hookless.noexception;
 	exports com.machinezoo.hookless.prefs;
+	/*
+	 * Preferences should be moved to separate library along with this dependency.
+	 */
 	requires transitive java.prefs;
 	requires com.machinezoo.stagean;
+	/*
+	 * This dependency should be downgraded to non-transitive once exception handlers are moved to separate library.
+	 */
 	requires transitive com.machinezoo.noexception;
+	/*
+	 * SLF4J is pulled in transitively via noexception, but the transitive dependency will be removed in future versions of noexception.
+	 */
+	requires org.slf4j;
 	requires com.google.common;
 	requires io.opentracing.api;
 	requires io.opentracing.util;
