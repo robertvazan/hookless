@@ -32,4 +32,8 @@ module com.machinezoo.hookless {
 	requires io.opentracing.util;
 	requires it.unimi.dsi.fastutil;
 	requires micrometer.core;
+	/*
+	 * Default ReactivePreferencesFactory can be configured via SPI just like PreferencesFactory.
+	 */
+	uses com.machinezoo.hookless.prefs.ReactivePreferencesFactory;
 }
