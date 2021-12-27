@@ -167,10 +167,16 @@
 				<version>3.2.0</version>
 				<configuration>
 					<notimestamp>true</notimestamp>
-					<detectLinks>true</detectLinks>
 					<bottom>
 						<![CDATA[<!-- No copyright message. -->]]>
 					</bottom>
+					<!-- Explicit link list, because detectLinks would cause every CI build to fail. -->
+					<!-- CI build is configured to fail on javadoc warnings and we want to keep that. -->
+					<links>
+						<link>https://stagean.machinezoo.com/javadoc/</link>
+						<link>https://noexception.machinezoo.com/javadoc/</link>
+						<!-- No link to SLF4J and OpenTracing, because automatic modules cannot be linked. -->
+					</links>
 				</configuration>
 				<executions>
 					<execution>
