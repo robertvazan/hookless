@@ -175,7 +175,7 @@
 					<links>
 						<link>https://stagean.machinezoo.com/javadoc/</link>
 						<link>https://noexception.machinezoo.com/javadoc/</link>
-						<!-- No link to SLF4J and OpenTracing, because automatic modules cannot be linked. -->
+						<!-- No link to OpenTracing, because automatic modules cannot be linked. -->
 					</links>
 				</configuration>
 				<executions>
