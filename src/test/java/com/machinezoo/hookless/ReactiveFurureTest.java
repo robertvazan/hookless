@@ -130,7 +130,7 @@ public class ReactiveFurureTest extends TestBase {
 			assertFalse(CurrentReactiveScope.blocked());
 		}
 	}
-	private static Stream<Arguments> completers() {
+	public static Stream<Object> completers() {
 		return Stream.of(
 			Arguments.of("done", (Consumer<CompletableFuture<String>>)(f -> f.complete("hello"))),
 			Arguments.of("failed", (Consumer<CompletableFuture<String>>)(f -> f.completeExceptionally(new ArithmeticException()))),
