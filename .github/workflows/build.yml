@@ -2,11 +2,13 @@
 name: build
 on:
   push:
-    branches:
-      - master
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
 jobs:
   build:
     uses: robertvazan/project-config/.github/workflows/java-build.yml@master
     with:
-      java-version: 11
+      java-version: 17
       test-coverage: true

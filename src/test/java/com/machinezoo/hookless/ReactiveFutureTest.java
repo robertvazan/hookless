@@ -18,7 +18,7 @@ import org.junitpioneer.jupiter.*;
 import com.google.common.util.concurrent.*;
 import com.machinezoo.noexception.*;
 
-public class ReactiveFurureTest extends TestBase {
+public class ReactiveFutureTest extends TestBase {
 	@Test
 	public void wrap() {
 		// Any CompletableFuture can be wrapped.
