@@ -4,8 +4,8 @@ package com.machinezoo.hookless;
 import static java.util.stream.Collectors.*;
 import java.util.*;
 import java.util.function.*;
+import com.machinezoo.closeablescope.*;
 import com.machinezoo.hookless.util.*;
-import com.machinezoo.noexception.*;
 import com.machinezoo.stagean.*;
 import it.unimi.dsi.fastutil.objects.*;
 
@@ -185,8 +185,7 @@ public class ReactiveScope {
 		 */
 		ReactiveScope parent = current();
 		if (parent == null) {
-			return () -> {
-			};
+			return () -> {};
 		}
 		ReactiveScope scope = OwnerTrace.of(new ReactiveScope())
 			.parent(parent)

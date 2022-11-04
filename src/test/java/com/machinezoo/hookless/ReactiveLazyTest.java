@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import org.junit.jupiter.api.*;
-import com.machinezoo.noexception.*;
+import com.machinezoo.closeablescope.*;
 
 public class ReactiveLazyTest {
 	@Test

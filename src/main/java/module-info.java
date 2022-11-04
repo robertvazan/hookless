@@ -23,6 +23,7 @@ module com.machinezoo.hookless {
 	 * This dependency should be downgraded to non-transitive once exception handlers are moved to separate library.
 	 */
 	requires transitive com.machinezoo.noexception;
+	requires com.machinezoo.noexception.slf4j;
 	/*
 	 * SLF4J is pulled in transitively via noexception, but the transitive dependency will be removed in future versions of noexception.
 	 */

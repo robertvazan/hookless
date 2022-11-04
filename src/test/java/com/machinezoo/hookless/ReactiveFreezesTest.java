@@ -6,7 +6,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.*;
-import com.machinezoo.noexception.*;
+import com.machinezoo.closeablescope.*;
 
 public class ReactiveFreezesTest {
 	private final ReactiveFreezes f = new ReactiveFreezes();

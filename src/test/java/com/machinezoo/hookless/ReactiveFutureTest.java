@@ -16,7 +16,7 @@ import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 import org.junitpioneer.jupiter.*;
 import com.google.common.util.concurrent.*;
-import com.machinezoo.noexception.*;
+import com.machinezoo.closeablescope.*;
 
 public class ReactiveFutureTest extends TestBase {
 	@Test

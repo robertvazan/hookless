@@ -3,8 +3,8 @@ package com.machinezoo.hookless;
 
 import java.util.*;
 import java.util.function.*;
+import com.machinezoo.closeablescope.*;
 import com.machinezoo.hookless.util.*;
-import com.machinezoo.noexception.*;
 import com.machinezoo.stagean.*;
 
 /*

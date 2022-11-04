@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import org.slf4j.*;
 import com.machinezoo.hookless.util.*;
-import com.machinezoo.noexception.*;
+import com.machinezoo.noexception.slf4j.*;
 import com.machinezoo.stagean.*;
 import io.opentracing.*;
 import io.opentracing.util.*;
@@ -173,7 +173,7 @@ public class ReactiveTrigger implements AutoCloseable {
 				 * Don't let exceptions escape from callbacks. Callbacks are supposed to handle their own exceptions.
 				 * If they fail to do so, we will just catch and log the exception.
 				 */
-				Exceptions.log(logger).run(callback);
+				ExceptionLogging.log(logger).run(callback);
 			}
 		}
 	}
@@ -195,6 +195,7 @@ public class ReactiveTrigger implements AutoCloseable {
 	public synchronized boolean closed() {
 		return closed;
 	}
+	@Override
 	public void close() {
 		ReactiveVariable<?>[] unsubscribed = null;
 		synchronized (this) {

@@ -20,6 +20,7 @@ project_status = lambda: f'{experimental_status()} Core classes are stable, incl
 
 def dependencies():
     use_noexception()
+    use_noexception_slf4j()
     use_fastutil()
     use_guava()
     use('io.micrometer:micrometer-core:1.6.4')

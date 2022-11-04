@@ -8,7 +8,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 import org.junit.jupiter.api.*;
-import com.machinezoo.noexception.*;
+import com.machinezoo.closeablescope.*;
 
 public class ReactiveStateMachineTest {
 	@Test
@@ -208,8 +208,7 @@ public class ReactiveStateMachineTest {
 		sm.advance();
 		assertThat(sm.output().exception().getCause(), instanceOf(ArithmeticException.class));
 		// Initial value is an exception as with Supplier.
-		ReactiveValue<Void> dv = ReactiveStateMachine.run(() -> {
-		}).output();
+		ReactiveValue<Void> dv = ReactiveStateMachine.run(() -> {}).output();
 		assertTrue(dv.blocking());
 		assertThat(dv.exception(), instanceOf(ReactiveBlockingException.class));
 	}

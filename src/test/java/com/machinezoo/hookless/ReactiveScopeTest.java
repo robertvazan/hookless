@@ -6,7 +6,7 @@ import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.*;
-import com.machinezoo.noexception.*;
+import com.machinezoo.closeablescope.*;
 
 public class ReactiveScopeTest {
 	@Test

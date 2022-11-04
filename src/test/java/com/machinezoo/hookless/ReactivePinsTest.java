@@ -6,7 +6,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.*;
-import com.machinezoo.noexception.*;
+import com.machinezoo.closeablescope.*;
 
 public class ReactivePinsTest {
 	// This test is very similar to the one for ReactiveFreezes, but it's not the same as the two classes behave differently.

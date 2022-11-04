@@ -5,9 +5,10 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 import org.slf4j.*;
+import com.machinezoo.closeablescope.*;
 import com.machinezoo.hookless.util.*;
 import com.machinezoo.hookless.utils.*;
-import com.machinezoo.noexception.*;
+import com.machinezoo.noexception.slf4j.*;
 import com.machinezoo.stagean.*;
 import io.micrometer.core.instrument.*;
 import io.micrometer.core.instrument.Timer;
@@ -56,8 +57,7 @@ public class ReactiveThread {
 	}
 	public ReactiveThread() {
 		OwnerTrace.of(this).alias("thread");
-		runnable = () -> {
-		};
+		runnable = () -> {};
 	}
 	public ReactiveThread(Runnable runnable) {
 		/*
@@ -213,7 +213,7 @@ public class ReactiveThread {
 			/*
 			 * Run the handler outside of the synchronized block, because it could be an expensive operation.
 			 */
-			Exceptions.log(logger).fromBiConsumer(handler).accept(this, exception);
+			ExceptionLogging.log(logger).fromBiConsumer(handler).accept(this, exception);
 		}
 		synchronized (this) {
 			/*
@@ -255,7 +255,7 @@ public class ReactiveThread {
 		 * Method iterate() should never throw, but let's make sure.
 		 * Use weak Runnable to allow GCing of reactive threads that are only referenced from thread pool queue.
 		 */
-		executor.execute(Exceptions.log(logger).runnable(new WeakRunnable<>(this, ReactiveThread::iterate)));
+		executor.execute(ExceptionLogging.log(logger).runnable(new WeakRunnable<>(this, ReactiveThread::iterate)));
 	}
 	private synchronized void invalidate() {
 		/*
