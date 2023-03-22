@@ -4,14 +4,9 @@ package com.machinezoo.hookless.experimental.std.constants;
 /*
  * With default configuration, object must satisfy requirements of ReactiveVersionObject.
  */
-public interface ReactiveConstantObject<T> extends ReactiveConstant {
+public interface HashedReactiveConstantObject<T> extends ReactiveConstantObject<T> {
 	@Override
 	default ReactiveConstantObjectConfig<T> reactiveConfig() {
-		return new ReactiveConstantObjectConfig<>(this);
-	}
-	T compute();
-	default T get() {
-		touch();
-		return compute();
+		return new HashedReactiveConstantObjectConfig<>(this);
 	}
 }

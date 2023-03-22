@@ -1,7 +1,6 @@
 // Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless.experimental;
 
-import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
 import java.security.*;
@@ -9,10 +8,14 @@ import java.util.*;
 import com.machinezoo.noexception.*;
 
 /*
+ * This is usually output of some cryptographic hash like SHA-256.
  * Word 0 contains lowest bits. Word 3 contains highest bits.
  * When serialized, the whole 256-bit hash is saved in big-endian byte order.
  */
 public record ReactiveVersionHash(long word3, long word2, long word1, long word0) implements ReactiveVersion {
+	/*
+	 * May be used in some edge cases like hashing nulls. Nobody has ever found data that would be hashed to zero by SHA-256.
+	 */
 	public static final ReactiveVersionHash ZERO = new ReactiveVersionHash(0, 0, 0, 0);
 	public long word(int offset) {
 		return switch (offset) {
@@ -62,14 +65,44 @@ public record ReactiveVersionHash(long word3, long word2, long word1, long word0
 		return fromBytes(Exceptions.sneak().get(() -> MessageDigest.getInstance("SHA-256")).digest(data));
 	}
 	public static ReactiveVersionHash hash(String text) {
-		if (text == null)
-			return ZERO;
-		return hash(text.getBytes(StandardCharsets.UTF_8));
+		return hash(text != null ? text.getBytes(StandardCharsets.UTF_8) : null);
 	}
-	public static ReactiveVersionHash hash(Serializable object) {
+	/*
+	 * Computes hash from object's type and its toString() output.
+	 * Assumes that two objects of the same type have the same toString() output iff the two objects are equal.
+	 * 
+	 * This places a number of restrictions on the object and all objects it contains:
+	 * - Implementation of toString() must be provided unless it is generated automatically like in enums and records.
+	 * - If arrays are included in records, these records must override toString().
+	 * - Types of contained objects must be sufficiently constrained to avoid ambiguous toString() output.
+	 * 
+	 * Generally, this works best for simple specialized records.
+	 */
+	public static ReactiveVersionHash hash(Object object) {
 		if (object == null)
 			return ZERO;
-		return hash(ReactiveKey.serialize(object));
+		return hash(object.getClass().getName() + ": " + object.toString());
+	}
+	public ReactiveVersionHash combine(ReactiveVersionHash other) {
+		Objects.requireNonNull(other);
+		var hasher = Exceptions.sneak().get(() -> MessageDigest.getInstance("SHA-256"));
+		hasher.update(toBytes());
+		hasher.update(other.toBytes());
+		return fromBytes(hasher.digest());
+	}
+	public ReactiveVersionHash combine(byte[] data) {
+		var hasher = Exceptions.sneak().get(() -> MessageDigest.getInstance("SHA-256"));
+		hasher.update(toBytes());
+		hasher.update(new byte[] { data != null ? (byte)1 : (byte)0 });
+		if (data != null)
+			hasher.update(data);
+		return fromBytes(hasher.digest());
+	}
+	public ReactiveVersionHash combine(String text) {
+		return combine(text != null ? text.getBytes(StandardCharsets.UTF_8) : null);
+	}
+	public ReactiveVersionHash combine(Object object) {
+		return combine(hash(object));
 	}
 	@Override
 	public ReactiveVersionHash toHash() {

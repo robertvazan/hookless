@@ -1,21 +1,18 @@
 // Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless.experimental.std.versions;
 
-import java.io.*;
 import java.util.*;
 import com.machinezoo.hookless.experimental.*;
 
 /*
  * Intended for small objects only. Large objects should be hashed. Object can be null.
- * Object must be serializable a stringifiable.
+ * Object must have the same properties as ReactiveKey plus it must satisfy requirements of ReactiveVersionHash.hash(object).
  */
-public record ReactiveVersionObject<T extends Serializable>(T object) implements ReactiveVersion {
+public record ReactiveVersionObject(Object object) implements ReactiveVersion {
+	private static final ReactiveVersionHash PREFIX = ReactiveVersionHash.hash(ReactiveVersionObject.class.getName());
 	@Override
 	public ReactiveVersionHash toHash() {
-		/*
-		 * Hardcoded Java serialization. Change requires defining new version type and employing it everywhere.
-		 */
-		return ReactiveVersionHash.hash(object);
+		return PREFIX.combine(object);
 	}
 	@Override
 	public String toString() {

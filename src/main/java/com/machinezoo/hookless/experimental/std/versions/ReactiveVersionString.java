@@ -8,9 +8,10 @@ import com.machinezoo.hookless.experimental.*;
  * Intended for short strings only. Long strings should be hashed. String can be null.
  */
 public record ReactiveVersionString(String text) implements ReactiveVersion {
+	private static final ReactiveVersionHash PREFIX = ReactiveVersionHash.hash(ReactiveVersionString.class.getName());
 	@Override
 	public ReactiveVersionHash toHash() {
-		return ReactiveVersionHash.hash(text);
+		return PREFIX.combine(text);
 	}
 	@Override
 	public String toString() {

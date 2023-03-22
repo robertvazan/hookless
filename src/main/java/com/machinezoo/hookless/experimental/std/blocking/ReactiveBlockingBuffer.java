@@ -17,7 +17,7 @@ public class ReactiveBlockingBuffer implements ReactiveSideEffectBuffer {
 			throw new IllegalArgumentException();
 	}
 	@Override
-	public ReactiveSideEffect build() {
+	public ReactiveBlocking build() {
 		return blocking ? new ReactiveBlocking() : null;
 	}
 }
