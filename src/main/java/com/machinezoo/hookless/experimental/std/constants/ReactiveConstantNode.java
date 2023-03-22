@@ -4,7 +4,7 @@ package com.machinezoo.hookless.experimental.std.constants;
 import java.util.*;
 import com.machinezoo.hookless.experimental.*;
 
-public class ReactiveConstantNode implements ReactiveData {
+public class ReactiveConstantNode implements ReactiveDataNode {
 	private final ReactiveConstant key;
 	public ReactiveConstantNode(ReactiveConstant key) {
 		this.key = key;
@@ -18,14 +18,14 @@ public class ReactiveConstantNode implements ReactiveData {
 		return key.reactiveConfig().version();
 	}
 	@Override
-	public Collection<ReactiveComputation> subscribers() {
+	public Collection<ReactiveComputationNode> subscribers() {
 		return Collections.emptyList();
 	}
 	@Override
-	public void subscribe(ReactiveComputation subscriber, long iteration, ReactiveVersion version) {
+	public void subscribe(ReactiveComputationNode subscriber, long iteration, ReactiveVersion version) {
 	}
 	@Override
-	public void unsubscribe(ReactiveComputation subscriber) {
+	public void unsubscribe(ReactiveComputationNode subscriber) {
 	}
 	public void track() {
 		var computation = ReactiveStack.top();

@@ -3,13 +3,13 @@ package com.machinezoo.hookless.experimental.std.bells;
 
 import com.machinezoo.hookless.experimental.*;
 
-public interface ReactiveBell extends ReactiveNodeKey {
+public interface ReactiveBell extends ReactiveData {
 	@Override
-	default ReactiveNodeConfig reactiveConfig() {
+	default ReactiveObjectConfig reactiveConfig() {
 		return new ReactiveBellConfig(this);
 	}
 	private ReactiveBellNode node() {
-		return (ReactiveBellNode)ReactiveNode.of(this);
+		return (ReactiveBellNode)ReactiveObjectNode.of(this);
 	}
 	default void listen() {
 		node().listen();

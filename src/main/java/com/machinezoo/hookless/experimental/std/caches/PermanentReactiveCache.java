@@ -7,13 +7,13 @@ import com.machinezoo.hookless.experimental.*;
 
 public class PermanentReactiveCache implements ReactiveCache {
 	public static final PermanentReactiveCache DEFAULT = new PermanentReactiveCache();
-	private final ConcurrentMap<ReactiveNodeKey, ReactiveNode> nodes = new ConcurrentHashMap<>();
+	private final ConcurrentMap<ReactiveObject, ReactiveObjectNode> nodes = new ConcurrentHashMap<>();
 	@Override
-	public ReactiveNode materialize(ReactiveNodeKey key) {
+	public ReactiveObjectNode materialize(ReactiveObject key) {
 		return nodes.computeIfAbsent(key, k -> k.reactiveConfig().instantiate());
 	}
 	@Override
-	public Collection<ReactiveNode> nodes() {
+	public Collection<ReactiveObjectNode> nodes() {
 		/*
 		 * Defensive copy to prevent mutations and to protect caller from concurrent changes.
 		 */

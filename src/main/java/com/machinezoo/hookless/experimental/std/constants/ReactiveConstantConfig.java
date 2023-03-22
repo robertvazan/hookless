@@ -4,7 +4,7 @@ package com.machinezoo.hookless.experimental.std.constants;
 import com.machinezoo.hookless.experimental.*;
 import com.machinezoo.hookless.experimental.std.caches.*;
 
-public interface ReactiveConstantConfig extends ReactiveNodeConfig {
+public interface ReactiveConstantConfig extends ReactiveObjectConfig {
 	@Override
 	ReactiveConstant key();
 	ReactiveVersion version();

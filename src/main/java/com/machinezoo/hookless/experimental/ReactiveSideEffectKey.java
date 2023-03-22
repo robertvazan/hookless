@@ -2,5 +2,5 @@
 package com.machinezoo.hookless.experimental;
 
 public interface ReactiveSideEffectKey extends ReactiveKey {
-	ReactiveSideEffectBuffer accumulate();
+	ReactiveSideEffectBuffer newBuffer();
 }

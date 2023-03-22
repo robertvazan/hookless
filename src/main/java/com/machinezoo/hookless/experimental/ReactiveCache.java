@@ -8,6 +8,6 @@ import java.util.*;
  * Some nodes do not track any state, so they can be completely transient, although that's not ideal for debugging.
  */
 public interface ReactiveCache {
-	ReactiveNode materialize(ReactiveNodeKey key);
-	Collection<ReactiveNode> nodes();
+	ReactiveObjectNode materialize(ReactiveObject key);
+	Collection<ReactiveObjectNode> nodes();
 }

@@ -4,7 +4,7 @@ package com.machinezoo.hookless.experimental.std.bells;
 import com.machinezoo.hookless.experimental.std.*;
 import com.machinezoo.hookless.experimental.std.versions.*;
 
-public class ReactiveBellNode extends StandardReactiveData {
+public class ReactiveBellNode extends StandardReactiveDataNode {
 	private final ReactiveBell key;
 	private long iteration = 1;
 	public ReactiveBellNode(ReactiveBell key) {

@@ -3,7 +3,7 @@ package com.machinezoo.hookless.experimental.std.markers;
 
 import com.machinezoo.hookless.experimental.*;
 
-public interface ReactiveMarker extends ReactiveNodeKey {
+public interface ReactiveMarker extends ReactiveData {
 	@Override
 	default ReactiveMarkerConfig reactiveConfig() {
 		return new ReactiveMarkerConfig(this);

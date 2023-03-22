@@ -15,11 +15,11 @@ import com.machinezoo.stagean.*;
 @ApiIssue("Alternative to top() that returns no-op consumer instead of null.")
 @ApiIssue("Stack trace of the current thread, of other threads, and a way to enumerate threads.")
 public class ReactiveStack {
-	private static ThreadLocal<Deque<ReactiveComputation>> current = ThreadLocal.withInitial(ArrayDeque::new);
-	public static ReactiveComputation top() {
+	private static ThreadLocal<Deque<ReactiveComputationNode>> current = ThreadLocal.withInitial(ArrayDeque::new);
+	public static ReactiveComputationNode top() {
 		return current.get().peekLast();
 	}
-	public static CloseableScope push(ReactiveComputation computation) {
+	public static CloseableScope push(ReactiveComputationNode computation) {
 		Objects.requireNonNull(computation);
 		var stack = current.get();
 		/*

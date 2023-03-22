@@ -5,7 +5,7 @@ import java.util.*;
 import com.machinezoo.hookless.experimental.*;
 import com.machinezoo.hookless.experimental.std.caches.*;
 
-public class ReactiveMarkerConfig implements ReactiveNodeConfig {
+public class ReactiveMarkerConfig implements ReactiveObjectConfig {
 	private final ReactiveMarker key;
 	public ReactiveMarkerConfig(ReactiveMarker key) {
 		Objects.requireNonNull(key);

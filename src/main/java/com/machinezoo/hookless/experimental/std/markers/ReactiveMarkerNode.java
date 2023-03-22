@@ -5,7 +5,7 @@ import java.util.*;
 import com.machinezoo.hookless.experimental.*;
 import com.machinezoo.hookless.experimental.std.versions.*;
 
-public class ReactiveMarkerNode implements ReactiveData {
+public class ReactiveMarkerNode implements ReactiveDataNode {
 	private final ReactiveMarker key;
 	public ReactiveMarkerNode(ReactiveMarker key) {
 		this.key = key;
@@ -19,14 +19,14 @@ public class ReactiveMarkerNode implements ReactiveData {
 		return NullReactiveVersion.INSTANCE;
 	}
 	@Override
-	public Collection<ReactiveComputation> subscribers() {
+	public Collection<ReactiveComputationNode> subscribers() {
 		return Collections.emptyList();
 	}
 	@Override
-	public void subscribe(ReactiveComputation subscriber, long iteration, ReactiveVersion version) {
+	public void subscribe(ReactiveComputationNode subscriber, long iteration, ReactiveVersion version) {
 	}
 	@Override
-	public void unsubscribe(ReactiveComputation subscriber) {
+	public void unsubscribe(ReactiveComputationNode subscriber) {
 	}
 	public void track() {
 		var computation = ReactiveStack.top();

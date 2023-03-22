@@ -5,11 +5,11 @@ import java.lang.ref.*;
 import java.util.*;
 import com.machinezoo.hookless.experimental.*;
 
-public abstract class StandardReactiveData implements ReactiveData {
+public abstract class StandardReactiveDataNode implements ReactiveDataNode {
 	private ReactiveVersion version;
-	private record Subscriber(WeakReference<ReactiveComputation> computation, long iteration) {}
-	private Map<ReactiveNodeKey, Subscriber> subscribers = new HashMap<>();
-	protected StandardReactiveData(ReactiveVersion version) {
+	private record Subscriber(WeakReference<ReactiveComputationNode> computation, long iteration) {}
+	private Map<ReactiveObject, Subscriber> subscribers = new HashMap<>();
+	protected StandardReactiveDataNode(ReactiveVersion version) {
 		this.version = version;
 	}
 	@Override
@@ -17,14 +17,14 @@ public abstract class StandardReactiveData implements ReactiveData {
 		return version;
 	}
 	@Override
-	public synchronized Collection<ReactiveComputation> subscribers() {
+	public synchronized Collection<ReactiveComputationNode> subscribers() {
 		return subscribers.values().stream()
 			.map(s -> s.computation.get())
 			.filter(Objects::nonNull)
 			.toList();
 	}
 	@Override
-	public void subscribe(ReactiveComputation subscriber, long iteration, ReactiveVersion version) {
+	public void subscribe(ReactiveComputationNode subscriber, long iteration, ReactiveVersion version) {
 		boolean invalidate = false;
 		synchronized (this) {
 			if (this.version.equals(version)) {
@@ -41,7 +41,7 @@ public abstract class StandardReactiveData implements ReactiveData {
 			subscriber.invalidate(iteration);
 	}
 	@Override
-	public synchronized void unsubscribe(ReactiveComputation subscriber) {
+	public synchronized void unsubscribe(ReactiveComputationNode subscriber) {
 		subscribers.remove(subscriber.key());
 	}
 	/*

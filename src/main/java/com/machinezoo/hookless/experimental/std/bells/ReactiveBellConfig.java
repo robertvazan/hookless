@@ -5,7 +5,7 @@ import java.util.*;
 import com.machinezoo.hookless.experimental.*;
 import com.machinezoo.hookless.experimental.std.caches.*;
 
-public class ReactiveBellConfig implements ReactiveNodeConfig {
+public class ReactiveBellConfig implements ReactiveObjectConfig {
 	private final ReactiveBell key;
 	public ReactiveBellConfig(ReactiveBell key) {
 		Objects.requireNonNull(key);

@@ -5,7 +5,7 @@ import com.machinezoo.hookless.experimental.*;
 
 public record ReactiveBlockingKey() implements ReactiveSideEffectKey {
 	@Override
-	public ReactiveBlockingBuffer accumulate() {
+	public ReactiveBlockingBuffer newBuffer() {
 		return new ReactiveBlockingBuffer();
 	}
 }

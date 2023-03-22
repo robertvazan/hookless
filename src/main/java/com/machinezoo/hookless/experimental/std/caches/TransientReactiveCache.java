@@ -7,11 +7,11 @@ import com.machinezoo.hookless.experimental.*;
 public class TransientReactiveCache implements ReactiveCache {
 	public static final TransientReactiveCache DEFAULT = new TransientReactiveCache();
 	@Override
-	public ReactiveNode materialize(ReactiveNodeKey key) {
+	public ReactiveObjectNode materialize(ReactiveObject key) {
 		return key.reactiveConfig().instantiate();
 	}
 	@Override
-	public Collection<ReactiveNode> nodes() {
+	public Collection<ReactiveObjectNode> nodes() {
 		return Collections.emptyList();
 	}
 }

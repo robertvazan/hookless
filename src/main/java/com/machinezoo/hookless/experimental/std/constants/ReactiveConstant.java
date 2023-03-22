@@ -3,7 +3,7 @@ package com.machinezoo.hookless.experimental.std.constants;
 
 import com.machinezoo.hookless.experimental.*;
 
-public interface ReactiveConstant extends ReactiveNodeKey {
+public interface ReactiveConstant extends ReactiveData {
 	@Override
 	ReactiveConstantConfig reactiveConfig();
 	default void touch() {
