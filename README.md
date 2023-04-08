@@ -15,7 +15,7 @@ More on [homepage](https://hookless.machinezoo.com/).
 
 ## Status
 
-Experimental. [Stagean](https://stagean.machinezoo.com/) is used to track progress on class and method level. Core classes are stable, including APIs, though poorly documented.
+Experimental. [Stagean](https://stagean.machinezoo.com/) is used to track progress on class and method level.
 
 ## Getting started
 
