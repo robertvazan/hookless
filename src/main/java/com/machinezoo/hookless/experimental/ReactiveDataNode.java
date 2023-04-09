@@ -10,8 +10,8 @@ public interface ReactiveDataNode extends ReactiveObjectNode {
 	ReactiveData key();
 	/*
 	 * Ideally content hash, but it can be also recursive dependency hash or a random hash indicating change.
-	 * Changes only when the node is locked, which should be done only by node's own methods.
-	 * Version reads from unlocked node are only informative. Calls are non-reactive.
+	 * This method is guaranteed to return the current version. There is no delay of visibility of changes between data and version.
+	 * Calls are non-reactive. To track the version as a dependency, call touch().
 	 */
 	ReactiveVersion version();
 	/*
@@ -29,8 +29,9 @@ public interface ReactiveDataNode extends ReactiveObjectNode {
 	 */
 	void unsubscribe(ReactiveComputationNode subscriber);
 	/*
-	 * Only useful in some trivial cases, for debugging, and for forced invalidation.
-	 * In most cases, data read must be synchronized with version read.
+	 * Enforce touch() API on all data nodes.
+	 * This gives persistent caches a way to probe their dependencies without loading them to memory.
+	 * The default implementation should work for most reactive data nodes as long as version() is efficient.
 	 */
 	default void touch() {
 		var consumer = ReactiveStack.top();

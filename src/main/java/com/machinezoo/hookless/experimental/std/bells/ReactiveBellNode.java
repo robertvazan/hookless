@@ -15,7 +15,7 @@ public class ReactiveBellNode extends StandardReactiveDataNode {
 	public ReactiveBell key() {
 		return key;
 	}
-	public void listen() {
+	public synchronized void listen() {
 		track();
 	}
 	public void ring() {

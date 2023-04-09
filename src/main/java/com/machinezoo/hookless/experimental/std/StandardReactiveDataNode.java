@@ -45,7 +45,8 @@ public abstract class StandardReactiveDataNode implements ReactiveDataNode {
 		subscribers.remove(subscriber.key());
 	}
 	/*
-	 * Must be called from unsynchronized context.
+	 * Must be called from the same synchronized context that reads data
+	 * to ensure consistency of data and tracked version.
 	 */
 	protected void track() {
 		var computation = ReactiveStack.top();
@@ -53,7 +54,8 @@ public abstract class StandardReactiveDataNode implements ReactiveDataNode {
 			computation.track(this, version);
 	}
 	/*
-	 * Must be called from synchronized context.
+	 * Must be called from synchronized context, because it performs read-then-update on version and subscribers.
+	 * Data changes should be performed in the same synchronized context to ensure consistency of data, version, and subscribers.
 	 * Returns invalidation batch that must be called outside synchronized context.
 	 */
 	protected Runnable commit(ReactiveVersion version) {
