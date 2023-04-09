@@ -1,6 +1,8 @@
 // Part of Hookless: https://hookless.machinezoo.com
 package com.machinezoo.hookless.experimental;
 
+import java.util.stream.*;
+
 /*
  * Computations can theoretically terminate when there are no dependencies to watch.
  * Dependencies can be smart enough to not report their version via track() method when they know that version will not change.
@@ -40,4 +42,9 @@ public interface ReactiveComputationNode extends ReactiveObjectNode {
 	 * Force refresh. Useful for global invalidations, debugging, and troubleshooting.
 	 */
 	void invalidate();
+	/*
+	 * Provide access to observed side effects while the computation is running.
+	 */
+	ReactiveSideEffect effect(ReactiveSideEffectKey key);
+	Stream<ReactiveSideEffect> effects();
 }
