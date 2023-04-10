@@ -152,7 +152,6 @@
 					</bottom>
 					<links>
 						<link>https://stagean.machinezoo.com/javadoc/</link>
-						<link>https://noexception.machinezoo.com/javadocs/core/</link>
 					</links>
 				</configuration>
 				<executions>

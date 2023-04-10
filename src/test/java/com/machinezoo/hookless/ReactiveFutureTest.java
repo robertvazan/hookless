@@ -5,7 +5,6 @@ import static org.awaitility.Awaitility.*;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -14,8 +13,6 @@ import java.util.stream.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
-import org.junitpioneer.jupiter.*;
-import com.google.common.util.concurrent.*;
 import com.machinezoo.closeablescope.*;
 
 public class ReactiveFutureTest extends TestBase {
@@ -61,8 +58,6 @@ public class ReactiveFutureTest extends TestBase {
 			assertFalse(rf.cancelled());
 			assertEquals("hello", rf.getNow("fallback"));
 			assertEquals("hello", rf.get());
-			assertEquals("hello", rf.get(Duration.ofSeconds(1)));
-			assertEquals("hello", rf.get(1, TimeUnit.SECONDS));
 			// No blocking in any of these.
 			assertFalse(CurrentReactiveScope.blocked());
 		}
@@ -81,8 +76,6 @@ public class ReactiveFutureTest extends TestBase {
 			assertFalse(rf.cancelled());
 			assertThrowsWrapped(ArithmeticException.class, () -> rf.getNow("fallback"));
 			assertThrowsWrapped(ArithmeticException.class, () -> rf.get());
-			assertThrowsWrapped(ArithmeticException.class, () -> rf.get(Duration.ofSeconds(1)));
-			assertThrowsWrapped(ArithmeticException.class, () -> rf.get(1, TimeUnit.SECONDS));
 			// No blocking in any of these.
 			assertFalse(CurrentReactiveScope.blocked());
 		}
@@ -97,36 +90,7 @@ public class ReactiveFutureTest extends TestBase {
 			assertTrue(rf.cancelled());
 			assertThrows(CancellationException.class, () -> rf.getNow("fallback"));
 			assertThrows(CancellationException.class, () -> rf.get());
-			assertThrows(CancellationException.class, () -> rf.get(Duration.ofSeconds(1)));
-			assertThrows(CancellationException.class, () -> rf.get(1, TimeUnit.SECONDS));
 			// No blocking in any of these.
-			assertFalse(CurrentReactiveScope.blocked());
-		}
-	}
-	@RepeatedTest(3)
-	public void timeout() {
-		ReactiveFuture<String> rf = new ReactiveFuture<>();
-		// Timeout overloads initially reactively block.
-		try (CloseableScope c = new ReactiveScope().enter()) {
-			assertThrows(ReactiveBlockingException.class, () -> rf.get(Duration.ofMillis(50)));
-			assertTrue(CurrentReactiveScope.blocked());
-		}
-		try (CloseableScope c = new ReactiveScope().enter()) {
-			assertThrows(ReactiveBlockingException.class, () -> rf.get(50, TimeUnit.MILLISECONDS));
-			assertTrue(CurrentReactiveScope.blocked());
-		}
-		// When the timeout expires, the same methods throw non-blocking timeout exception instead.
-		sleep(100);
-		try (CloseableScope c = new ReactiveScope().enter()) {
-			assertThrows(UncheckedTimeoutException.class, () -> rf.get(Duration.ofMillis(50)));
-			assertThrows(UncheckedTimeoutException.class, () -> rf.get(50, TimeUnit.MILLISECONDS));
-			assertFalse(CurrentReactiveScope.blocked());
-		}
-		// When the future is completed, the timeout exception is replaced with the actual result.
-		rf.completable().complete("hello");
-		try (CloseableScope c = new ReactiveScope().enter()) {
-			assertEquals("hello", rf.get(Duration.ofMillis(50)));
-			assertEquals("hello", rf.get(50, TimeUnit.MILLISECONDS));
 			assertFalse(CurrentReactiveScope.blocked());
 		}
 	}
@@ -147,8 +111,6 @@ public class ReactiveFutureTest extends TestBase {
 		sms.add(ReactiveStateMachine.supply(() -> rf.cancelled()));
 		sms.add(ReactiveStateMachine.supply(() -> rf.get()));
 		sms.add(ReactiveStateMachine.supply(() -> rf.getNow("fallback")));
-		sms.add(ReactiveStateMachine.supply(() -> rf.get(Duration.ofSeconds(1))));
-		sms.add(ReactiveStateMachine.supply(() -> rf.get(1, TimeUnit.SECONDS)));
 		for (ReactiveStateMachine<?> sm : sms) {
 			sm.advance();
 			assertTrue(sm.valid());
@@ -164,28 +126,6 @@ public class ReactiveFutureTest extends TestBase {
 		completer.accept(rf.completable());
 		for (ReactiveStateMachine<?> sm : sms)
 			assertTrue(sm.valid());
-	}
-	@RetryingTest(10)
-	public void reactiveTimeout() {
-		Function<ReactiveFuture<String>, String> m1 = f -> f.get(Duration.ofMillis(50));
-		Function<ReactiveFuture<String>, String> m2 = f -> f.get(50, TimeUnit.MILLISECONDS);
-		for (Function<ReactiveFuture<String>, String> m : Arrays.asList(m1, m2)) {
-			ReactiveFuture<String> rf = new ReactiveFuture<>();
-			// Watch the timeouting method.
-			ReactiveStateMachine<String> sm = ReactiveStateMachine.supply(() -> m.apply(rf));
-			assertThrows(ReactiveBlockingException.class, () -> m.apply(rf));
-			sm.advance();
-			assertTrue(sm.valid());
-			// When timeout expires, the method signals change since the type of exception has changed.
-			sleep(100);
-			assertFalse(sm.valid());
-			assertThrows(UncheckedTimeoutException.class, () -> m.apply(rf));
-			sm.advance();
-			assertTrue(sm.valid());
-			// When the reactive future is completed, the method signals another change since the result is now available.
-			rf.completable().complete("done");
-			assertFalse(sm.valid());
-		}
 	}
 	@Test
 	public void supplyReactive() {

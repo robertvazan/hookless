@@ -30,7 +30,6 @@ class Project(scaffold.Java):
     
     def javadoc_links(self):
         yield from super().javadoc_links()
-        yield 'https://noexception.machinezoo.com/javadocs/core/'
         # No link to OpenTracing, because automatic modules cannot be linked.
     
     def documentation_links(self):

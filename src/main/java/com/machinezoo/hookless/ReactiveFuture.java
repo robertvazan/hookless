@@ -2,12 +2,9 @@
 package com.machinezoo.hookless;
 
 import java.lang.ref.*;
-import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
-import com.google.common.util.concurrent.*;
-import com.machinezoo.hookless.time.*;
 import com.machinezoo.hookless.util.*;
 import com.machinezoo.stagean.*;
 
@@ -21,6 +18,7 @@ import com.machinezoo.stagean.*;
  *            type of result returned by the future
  */
 @StubDocs
+@ApiIssue("Get with timeout depends on reactive time, which means it will be available only after time is in std.")
 public class ReactiveFuture<T> {
 	/*
 	 * Strong reference to CompletableFuture. If something references us, CompletableFuture must stay alive.
@@ -167,59 +165,6 @@ public class ReactiveFuture<T> {
 			return fallback;
 		}
 		return unpack(value);
-	}
-	/*
-	 * Timeout should be counted from the first call to the timeouting overload in order to avoid cascading of timeouts.
-	 * Implementing timeouts via reactive pins would never work reliably if at all.
-	 */
-	private Instant start;
-	/*
-	 * CompletableFuture uses the legacy TimeUnit enum. This is a new API, so use the new Duration class instead.
-	 * This is the only synchronized get* method due to the timestamp field access.
-	 */
-	public synchronized T get(Duration timeout) {
-		Objects.requireNonNull(timeout);
-		ReactiveValue<T> value = variable.value();
-		/*
-		 * First check whether we have value available even if the timeout has been already reached.
-		 * This results in somewhat odd behavior when the future first throws due to timeout and later returns the actual result.
-		 * But then this is reactive API and function results are expected to change over time.
-		 */
-		if (value.blocking()) {
-			/*
-			 * This is a rarely used feature. Initialize timestamp lazily to avoid burdening the typical case.
-			 * This also lets us count time from the first moment this method was called rather than since object creation.
-			 * That works better when this future is precreated and then lies around for some time.
-			 */
-			if (start == null)
-				start = Instant.now();
-			if (ReactiveInstant.now().isAfter(start.plus(timeout))) {
-				/*
-				 * Do not reactively block. The whole point of the timeout is to limit the duration of blocking.
-				 * CompletableFuture does not block (synchronously) in this case either.
-				 * 
-				 * Throw unchecked variant of TimeoutException to simplify use of the API and to stay consistent with other hookless APIs.
-				 * This exception type comes from Guava, which means we are creating hard dependency on Guava.
-				 * That's somewhat controversial, but it's better than declaring our own or throwing checked exceptions.
-				 */
-				throw new UncheckedTimeoutException();
-			}
-			/*
-			 * If timeout has not been reached yet, continue like in get().
-			 */
-			throw ReactiveBlockingException.block();
-		}
-		return unpack(value);
-	}
-	/*
-	 * Offer the TimeUnit-based API as well for compatibility with CompletableFuture.
-	 */
-	public T get(long timeout, TimeUnit unit) {
-		/*
-		 * Java 9 has TimeUnit.toChronoUnit(), which could be then used with Duration.of().
-		 * In Java 8, roundtrip via nanoseconds will suffice for timeouts up to 292 years.
-		 */
-		return get(Duration.ofNanos(unit.toNanos(timeout)));
 	}
 	@Override
 	public String toString() {

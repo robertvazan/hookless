@@ -11,9 +11,6 @@
 module com.machinezoo.hookless {
 	exports com.machinezoo.hookless;
 	exports com.machinezoo.hookless.util;
-	exports com.machinezoo.hookless.time;
-	exports com.machinezoo.hookless.noexception;
-	exports com.machinezoo.hookless.prefs;
 	/*
 	 * Preferences should be moved to separate library along with this dependency.
 	 */
@@ -33,8 +30,4 @@ module com.machinezoo.hookless {
 	requires io.opentracing.util;
 	requires it.unimi.dsi.fastutil;
 	requires micrometer.core;
-	/*
-	 * Default ReactivePreferencesFactory can be configured via SPI just like PreferencesFactory.
-	 */
-	uses com.machinezoo.hookless.prefs.ReactivePreferencesFactory;
 }
