@@ -16,6 +16,7 @@ public interface ReactiveComputationNode extends ReactiveObjectNode {
 	/*
 	 * Number of times this computation has run. Non-negative. Informative. Non-reactive.
 	 * There's no computation hash, because many computations do not produce any data.
+	 * This is the number of completed iterations, so it's zero while the computation runs for the first time.
 	 */
 	long iteration();
 	/*
