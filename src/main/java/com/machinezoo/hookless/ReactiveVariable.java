@@ -27,7 +27,6 @@ import io.opentracing.util.*;
  *            type of the stored value
  * 
  * @see ReactiveTrigger
- * @see ReactiveCollections
  */
 @DraftDocs("link to docs for reactive data sources, reactive computation")
 public class ReactiveVariable<T> {
