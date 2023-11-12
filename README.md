@@ -3,7 +3,7 @@
 
 # Hookless
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.machinezoo.hookless/hookless)](https://search.maven.org/artifact/com.machinezoo.hookless/hookless)
+[![Maven Central](https://img.shields.io/maven-central/v/com.machinezoo.hookless/hookless)](https://central.sonatype.com/artifact/com.machinezoo.hookless/hookless)
 [![Build status](https://github.com/robertvazan/hookless/workflows/build/badge.svg)](https://github.com/robertvazan/hookless/actions/workflows/build.yml)
 [![Test coverage](https://codecov.io/gh/robertvazan/hookless/branch/master/graph/badge.svg)](https://codecov.io/gh/robertvazan/hookless)
 

@@ -20,12 +20,12 @@ class Project(scaffold.Java):
         yield self.use_noexception_slf4j()
         yield self.use_fastutil()
         yield self.use_guava()
-        yield self.use('io.micrometer:micrometer-core:1.6.4')
+        yield self.use('io.micrometer:micrometer-core:1.11.5')
         yield self.use('io.opentracing:opentracing-util:0.33.0')
         yield self.use_junit()
         yield self.use_hamcrest()
-        yield self.use('org.awaitility:awaitility:4.0.3', 'test')
-        yield self.use('org.junit-pioneer:junit-pioneer:0.9.0')
+        yield self.use('org.awaitility:awaitility:4.2.0', 'test')
+        yield self.use('org.junit-pioneer:junit-pioneer:2.1.0')
         yield self.use_slf4j_test()
     
     def javadoc_links(self):
